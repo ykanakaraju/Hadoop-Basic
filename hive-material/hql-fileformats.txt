@@ -1,0 +1,65 @@
+==== File Formats ====
+
+CREATE TABLE empinfo (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/Hive/emp.txt' OVERWRITE INTO TABLE empinfo;
+
+#----------------
+# Sequence File
+#----------------
+CREATE TABLE empinfo_seq (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n' 
+STORED AS SEQUENCEFILE;
+
+INSERT INTO empinfo_seq SELECT * FROM empinfo;  // This will create a Seq file that you can use to load into it.
+LOAD DATA LOCAL INPATH '<seq-file>' INTO TABLE empinfo_seq;
+LOAD DATA LOCAL INPATH '/home/cloudera/hive_data/sequence_files/*' INTO TABLE empinfo_seq
+
+#----------------
+# Avro File
+#----------------
+CREATE TABLE empinfo_avro_2 (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+
+STORED AS AVRO;
+
+INSERT INTO empinfo_avro_2 SELECT * FROM empinfo; 
+LOAD DATA LOCAL INPATH '/home/cloudera/hive_data/avro_files/avro_empinfo_1.avro' INTO TABLE empinfo_avro_2
+
+-- create avro table with explicit schema --
+CREATE TABLE empinfo_avro (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
+STORED AS INPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat'
+OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat';
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive_data/avro_files/avro_empinfo_1.avro' INTO TABLE empinfo_avro
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/Hive/emp.txt' INTO TABLE empinfo;
+
+#----------------
+# ORC File
+#----------------
+CREATE TABLE empinfo_orc (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+
+STORED AS ORC;
+
+INSERT INTO empinfo_orc SELECT * FROM empinfo;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive_data/orc_files/orc_empinfo_1.orc' INTO TABLE empinfo_orc
+
+
+#----------------
+# PARQUET File
+#----------------
+CREATE TABLE empinfo_parquet (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+
+STORED AS PARQUET;
+
+INSERT INTO empinfo_parquet SELECT * FROM empinfo;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive_data/parquet_files/parquet_empinfo_1.parquet' INTO TABLE empinfo_parquet

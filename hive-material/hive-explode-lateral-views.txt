@@ -1,0 +1,63 @@
+###########################################
+ Lateral View & Explode
+###########################################
+
+create table tab_lateral (id int, phones array<string>, emails array<string>)
+row format delimited 
+fields terminated by '\t'
+collection items terminated by ','
+stored as textfile;
+
+load data local inpath '/home/cloudera/hive/Hive/lateral_view_data.txt' overwrite into table tab_lateral;
+
+# note: expode can not be merged with any other columns as is.
+# use lateral views if you want to do so.
+
+select explode(phones) from tab_lateral;
+
+select id, phones_l from tab_lateral 
+lateral view explode(phones) p as phones_l;
+
+select id, phones_l, emails_l from tab_lateral 
+lateral view explode(phones) p as phones_l
+lateral view explode(emails) e as emails_l;
+
+################################################
+
+-- This results in cross product of array values, which is not a good data representaion
+-- Lets breakdown the data properly
+
+
+create table if not exists tab_lateral_tmp_phones
+(rowid int, id int, phone string)
+row format delimited
+fields terminated by '|';
+
+insert overwrite table tab_lateral_tmp_phones
+select row_number() over(), id, phones_l from tab_lateral 
+lateral view explode(phones) p as phones_l;
+
+
+create table if not exists tab_lateral_tmp_emails
+(rowid int, id int, email string)
+row format delimited
+fields terminated by '|';
+
+insert overwrite table tab_lateral_tmp_emails
+select row_number() over(), id, emails_l from tab_lateral 
+lateral view explode(emails) p as emails_l;
+
+create table if not exists tab_lateral_breakdown
+(rowid int, id int, phone string, email string)
+row format delimited
+fields terminated by '|';
+
+insert overwrite table tab_lateral_breakdown
+select a.rowid, a.id, a.phone, b.email
+from   tab_lateral_tmp_phones a, tab_lateral_tmp_emails b
+where  a.rowid = b.rowid and a.id = b.id;
+
+
+
+
+

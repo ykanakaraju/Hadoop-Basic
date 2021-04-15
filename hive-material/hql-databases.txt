@@ -1,0 +1,57 @@
+NOTE: You can use the schema SCHEMA in place of DATABASE in most of these commands
+
+
+CREATE DATABASE human_resources;
+
+SHOW DATABASES;
+
+SHOW DATABASES LIKE 'h.*';
+
+# the following setting with show db name in hive prompt..
+set hive.cli.print.current.db=true;  // show db in the prompt
+set hive.cli.print.current.db=false;  // turn-off db in the prompt
+
+USE <database>
+
+############### CREATE DATABSE ###################
+
+CREATE DATABASE financials LOCATION '/my/preferred/directory';
+
+CREATE DATABASE financials COMMENT 'Holds all financial tables';
+
+CREATE DATABASE financials WITH DBPROPERTIES ('creator' = 'Kanak', 'date' = '2020-03-01');
+
+############## DESCRIBE ############
+
+DESCRIBE DATABASE <database>
+DESCRIBE DATABASE EXTENDED financials;
+
+############## DROP ############ 
+
+DROP DATABASE IF EXISTS financials;
+DROP DATABASE IF EXISTS financials CASCADE;
+
+############## ALTER ############ 
+ALTER DATABASE financials SET DBPROPERTIES ('edited-by' = 'Kanak');
+
+NOTE: There is no way to delete or “unset” a DBPROPERTY.
+
+
+
+
+
+
+
+
+==== NOTES ====
+
+Hive will create a directory for each database. 
+Tables in that database will be stored in subdirectories of the database directory. 
+The exception is tables in the "default" database, which doesn’t have its own directory.
+
+The database directory is created under a top-level directory specified by the property 
+"hive.metastore.warehouse.dir" located in "/usr/lib/hive/conf/hive-site.xml"
+
+##-- dropping databases --
+Using the RESTRICT keyword instead of CASCADE is equivalent to the default behavior,
+where existing tables must be dropped before dropping the database

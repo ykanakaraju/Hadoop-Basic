@@ -1,0 +1,66 @@
+CREATE DATABASE indexes_demo;
+
+USE indexes_demo;
+
+CREATE TABLE users (userid INT, gender STRING, age INT, occupation_id INT, zipcode STRING) ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',' STORED AS TEXTFILE;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/hive_index/users' INTO TABLE users;
+
+SELECT AVG(age) FROM users;
+
+======================================
+
+CREATE INDEX users_index
+ON TABLE users (age)
+AS 'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler'
+WITH DEFERRED REBUILD;
+
+CREATE INDEX users_index ON TABLE users (age) AS 'COMPACT' WITH DEFERRED REBUILD;
+
+CREATE INDEX users_index
+ON TABLE users (age)
+AS 'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler'
+WITH DEFERRED REBUILD
+IN TABLE user_index_tab;
+
+ALTER INDEX users_index on users REBUILD;
+
+SHOW FORMATTED INDEX ON users;
+
+SELECT AVG(age) FROM users;
+
+
+CREATE INDEX employees_index
+ON TABLE employees (country)
+AS 'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler'
+WITH DEFERRED REBUILD
+IDXPROPERTIES ('creator = 'me', 'created_at' = 'some_time')
+IN TABLE employees_index_table
+PARTITIONED BY (country, name)
+COMMENT 'Employees indexed by country and name.';
+
+
+DESCRIBE index_demo__users_users_index__;
+
+# both of these should give you the same output.
+SELECT DISTINCT age from users;
+SELECT age FROM index_demo__users_users_index__;
+
+======================================
+Creating Bitmap Index:
+======================================
+
+CREATE INDEX users_index_bitmap
+ON TABLE users (age)
+AS 'BITMAP'
+WITH DEFERRED REBUILD;
+
+ALTER INDEX users_index_bitmap on users REBUILD;
+
+SHOW FORMATTED INDEX ON users;
+
+DROP INDEX IF EXISTS users_index ON users;
+
+SELECT AVG(age) FROM users;
+

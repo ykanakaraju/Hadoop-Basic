@@ -1,0 +1,173 @@
+
+ SHOW TBLPROPERTIES empinfo;
+
+ SHOW TBLPROPERTIES empinfo('numFiles'); 
+
+
+CREATE TABLE empinfo (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/emp.txt' INTO TABLE empinfo;
+  
+#========================================
+#      adding meta data   
+#========================================
+CREATE TABLE emp_tp_metadata 
+(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE 
+TBLPROPERTIES ('creator'='raju', 'created_at'='2020-03-01 10:00:00')
+
+show tblproperties emp_tp_metadata;
+
+show tblproperties emp_tp_metadata('creator');
+
+show tblproperties emp_tp_metadata('created_at');
+
+
+#========================================
+#      immutable  tables    
+#========================================
+
+As of Hive 0.13.0, a table can be made immutable by creating it with 
+TBLPROPERTIES ("immutable"="true"). 
+
+The default is "immutable"="false".
+
+INSERT INTO behavior into an immutable table is disallowed if any data is already present, 
+although INSERT INTO still works if the immutable table is empty. 
+
+The behavior of INSERT OVERWRITE is not affected by the "immutable" table property.
+
+An immutable table is protected against accidental updates due to a script loading data 
+into it being run multiple times by mistake. The first insert into an immutable table 
+succeeds and successive inserts fail, resulting in only one set of data in the table, 
+instead of silently succeeding with multiple copies of the data in the table. 
+
+===============
+
+CREATE TABLE emp_tp_immutable
+(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE 
+TBLPROPERTIES ("immutable"="true")
+
+show tblproperties emp_tp_immutable("immutable");
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/emp.txt' INTO TABLE emp_tp_immutable;
+
+INSERT INTO TABLE emp_tp_immutable SELECT * FROM empinfo WHERE empid = 101;
+
+INSERT OVERWRITE TABLE emp_tp_immutable SELECT * FROM empinfo WHERE empid = 101;
+
+TRUNCATE TABLE emp_tp_immutable;
+
+SELECT * FROM emp_tp_immutable;
+
+INSERT INTO TABLE emp_tp_immutable SELECT * FROM empinfo;
+
+SELECT * FROM emp_tp_immutable;
+
+ALTER TABLE emp_tp_immutable SET TBLPROPERTIES ("immutable"="false")
+
+INSERT INTO TABLE emp_tp_immutable SELECT * FROM empinfo WHERE empid = 101
+
+#========================================
+#      transactions    
+#========================================
+
+CREATE TABLE table_name (
+  id                int,
+  name              string
+)
+CLUSTERED BY (id) INTO 2 BUCKETS STORED AS ORC
+TBLPROPERTIES ("transactional"="true",
+  "compactor.mapreduce.map.memory.mb"="2048",     
+  "compactorthreshold.hive.compactor.delta.num.threshold"="4", 
+  "compactorthreshold.hive.compactor.delta.pct.threshold"="0.5" 
+);
+=====
+Set the following properties in hive-site.xml file. 
+---------------------------------------------------
+  <property>
+    <name>hive.support.concurrency</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>hive.enforce.bucketing</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>hive.exec.dynamic.partition.mode</name>
+    <value>nonstrict</value>
+  </property>
+  <property>
+    <name>hive.txn.manager</name>
+    <value>rg.apache.hadoop.hive.ql.lockmgr.DbTxnManager</value>
+  </property>
+  <property>
+    <name>hive.compactor.initiator.on</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>hive.compactor.worker.threads</name>
+    <value>1</value>
+  </property>
+
+=====
+
+configurations to be set in hive CLI session
+-----------------------------------------
+set hive.support.concurrency = true;
+set hive.enforce.bucketing = true;
+set hive.exec.dynamic.partition.mode = nonstrict;
+set hive.txn.manager = org.apache.hadoop.hive.ql.lockmgr.DbTxnManager;
+set hive.compactor.initiator.on = true;
+set hive.compactor.worker.threads = 1;
+
+CREATE TABLE user_acid (userid int, name string, age int, gender string) 
+CLUSTERED BY (userid) INTO 5 buckets 
+STORED AS ORC
+TBLPROPERTIES('transactional'='true');
+
+INSERT INTO user_acid(userid, name, age, gender) VALUES 
+(1, 'Raju', 40, 'male'), 
+(2, 'Raghu', 42, 'male'),
+(3, 'Vinay', 20, 'male'), 
+(4, 'Amrita', 14, 'female'), 
+(5, 'Aditya', 14, 'male'), 
+(6, 'Keertana', 12, 'female'), 
+(7, 'Pranav', 24, 'male'), 
+(8, 'Hari', 24, 'male'), 
+(9, 'Syamala', 23, 'female')
+
+SELECT * from user_acid;
+
+UPDATE user_acid SET age = 41 where name='Raju';
+
+DELETE FROM user_acid WHERE userid = 9;
+
+========================================
+========== TABLE PROPERTIES ============
+========================================
+
+TBLPROPERTIES ("comment"="table_comment")
+TBLPROPERTIES ("hbase.table.name"="table_name") – see HBase Integration.
+TBLPROPERTIES ("immutable"="true") or ("immutable"="false") in release 0.13.0+ (HIVE-6406) – see Inserting Data into Hive Tables from Queries.
+TBLPROPERTIES ("orc.compress"="ZLIB") or ("orc.compress"="SNAPPY") or ("orc.compress"="NONE") and other ORC properties – see ORC Files.
+TBLPROPERTIES ("transactional"="true") or ("transactional"="false") in release 0.14.0+, the default is "false" – see Hive Transactions.
+TBLPROPERTIES ("NO_AUTO_COMPACTION"="true") or ("NO_AUTO_COMPACTION"="false"), the default is "false" – see Hive Transactions.
+TBLPROPERTIES ("compactor.mapreduce.map.memory.mb"="mapper_memory") – see Hive Transactions.
+TBLPROPERTIES ("compactorthreshold.hive.compactor.delta.num.threshold"="threshold_num") – see Hive Transactions.
+TBLPROPERTIES ("compactorthreshold.hive.compactor.delta.pct.threshold"="threshold_pct") – see Hive Transactions.
+TBLPROPERTIES ("auto.purge"="true") or ("auto.purge"="false") in release 1.2.0+ (HIVE-9118) – see Drop Table, Drop Partitions, Truncate Table, and Insert Overwrite.
+TBLPROPERTIES ("EXTERNAL"="TRUE") in release 0.6.0+ (HIVE-1329) – Change a managed table to an external table and vice versa for "FALSE".
+As of Hive 2.4.0 (HIVE-16324) the value of the property 'EXTERNAL' is parsed as a boolean (case insensitive true or false) instead of a case sensitive string comparison.
+TBLPROPERTIES ("external.table.purge"="true") in release 4.0.0+ (HIVE-19981) when set on external table would delete the data as well.

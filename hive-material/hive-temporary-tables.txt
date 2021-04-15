@@ -1,0 +1,15 @@
+Hive temporary tables are local to the user session. You can use temporary table repeatedly within a user session for multiple times. Hive automatically deletes all temporary tables at the end of the Hive session in which they are created.
+
+
+
+CREATE TEMPORARY TABLE temp1(col1 string);
+CREATE TEMPORARY TABLE temp2 AS Select * from table_name; 
+CREATE TEMPORARY TABLE temp3 LIKE table_name;
+
+
+Below are the some of the limitations of Hive temporary tables:
+
+Partition columns option is not supported on temporary tables.
+Creating indexes on temporary table is not allowed.
+A temporary table with the same name as a permanent table will cause all references to that table name to resolve to the temporary table.
+The user cannot access the permanent table with same name as temporary tables during that session without dropping or renaming the temporary table.

@@ -1,0 +1,193 @@
+create table stocks 
+(TrxnDate String, Ticker String, Open Double, High Double, Low Double, Close Double, Volume int) 
+row format delimited 
+fields terminated by ',';
+
+# NOTE: Get the dataset from the link shown below
+# https://drive.google.com/file/d/0ByJLBTmJojjzbVhvSnQwNlhXUWs/view
+
+load data local inpath '/home/cloudera/hive/Hive/stocks.csv' into table stocks
+
+#--------------------------------------------------------------------------
+#------------------ LAG --------------------------------------------------
+# This function returns the values of the previous row. You can specify an 
+# integer offset which designates the row position else it will take the 
+# default integer offset as 1.
+# Lag is to be used with over function, inside the over function you can use 
+# partition or order by classes.
+#-------------------------------------------------------------------------
+
+SELECT Ticker, TrxnDate, Close, LAG(Close,1) OVER(PARTITION BY Ticker) as yesterday_price 
+FROM stocks LIMIT 10;
+
+SELECT Ticker, TrxnDate, Close, LAG(Close,2) OVER(ORDER BY TrxnDate) as yesterday_price 
+FROM stocks LIMIT 10;
+
+#--------------------------------------------------------------------------
+#------------------ LEAD --------------------------------------------------
+#--------------------------------------------------------------------------
+
+SELECT Ticker, TrxnDate, Close, LEAD(Close,1) OVER(PARTITION BY Ticker) as yesterday_price 
+FROM stocks LIMIT 10;
+
+SELECT Ticker, TrxnDate, Close, 
+CASE(LEAD(close,1) OVER(PARTITION BY ticker) - CLOSE) > 0 
+WHEN TRUE THEN "higher" WHEN FALSE THEN "lesser" END as Changes 
+FROM stocks LIMIT 10
+
+
+#--------------------------------------------------------------------------
+#------------------ FIRST_VALUE -------------------------------------------
+# It returns the value of the first row from that window. 
+# Here we can see the first row high price of the ticker for all the days.
+#-------------------------------------------------------------------------
+
+select ticker, high, first_value(high) over(partition by ticker) as first_high 
+from stocks limit 10;
+
+#--------------------------------------------------------------------------
+#------------------ LAST_VALUE --------------------------------------------
+# It returns the value of the first row from that window. 
+# Here we can see the first row high price of the ticker for all the days.
+#-------------------------------------------------------------------------
+
+select ticker, high, last_value(high) over(partition by ticker) as last_high
+from stocks limit 100;
+
+select ticker, high, last_value(high) over(partition by ticker) as last_high , first_value(high) over(partition by ticker) as first_high 
+from stocks limit 100;
+
+#--------------------------------------------------------------------------
+#----------------------- COUNT --------------------------------------------
+# It returns the count of all the values for the expression written in the 
+# over clause. From the below query, # we can find the number of rows present 
+# for each ticker.
+#--------------------------------------------------------------------------
+
+select ticker, count(ticker) over(partition by ticker) as cnt from stocks
+
+#--------------------------------------------------------------------------
+#----------------------- SUM --------------------------------------------
+# It returns the sum of all the values for the expression written in the 
+# over clause. From the below query, we can find the sum of all the closing 
+# stock prices for that particular ticker.
+#--------------------------------------------------------------------------
+
+select ticker,sum(close) over(partition by ticker) as total from stocks
+
+
+#--------------------------------------------------------------------------
+#------ Finding running total ---------------------------------------------
+#--------------------------------------------------------------------------
+
+select ticker, trxndate, volume, 
+sum(volume) over(partition by ticker order by trxndate) as running_total 
+from stocks limit 10
+
+#--------------------------------------------------------------------------
+#------ Finding the percentage of each row value --------------------------
+#--------------------------------------------------------------------------
+
+select ticker, 
+   trxndate, 
+   volume,
+   (volume*100/(sum(volume) over(partition by ticker))) as percentage
+from stocks limit 10
+
+#--------------------------------------------------------------------------
+#------ Min, Max, Avg -----------------------------------------------------
+#--------------------------------------------------------------------------
+
+select ticker, close, min(close) over(partition by ticker) as minimum from stocks 
+select ticker, close, max(close) over(partition by ticker) as maximum from stocks
+select ticker, close, avg(close) over(partition by ticker) as average from stocks
+
+#--------------------------------------------------------------------------
+#-------------------------- RANK ------------------------------------------
+# The rank function will return the rank of the values as per the result set 
+# of the over clause. If two values # are same then it will give the same rank 
+# to those 2 values and then for the next value, the sub-sequent rank will be 
+# skipped.
+
+# The below query will rank the closing prices of the stock for each ticker. 
+#--------------------------------------------------------------------------
+select ticker,
+      close,
+      rank() over(partition by ticker order by close) as closing 
+from stocks
+
+#--------------------------------------------------------------------------
+#-------------------------- DENSE_RANK ------------------------------------
+# It is same as the rank() function but the difference is if any duplicate value 
+# is present then the rank will not be skipped for the subsequent rows. Each 
+# unique value will get the ranks in a sequence.
+
+# The below query will rank the closing prices of the stock for each ticker.
+#--------------------------------------------------------------------------
+select ticker,
+     close,
+     dense_rank() over(partition by ticker order by close) as closing 
+from stocks
+
+#--------------------------------------------------------------------------
+#-------------------------- PERCENT_RANK ------------------------------------
+# It returns the percentage rank of each row within the result set of over 
+# clause. Percent_rank is calculated in accordance with the rank of the row 
+# and the calculation is as follows (rank-1)/(total_rows_in_group – 1). 
+# If the result set has only one row then the percent_rank will be 0.
+# The below query will calculate the percent_rank for every row in each partition
+#--------------------------------------------------------------------------
+select ticker,
+     close,
+     percent_rank() over(partition by ticker order by close) as closing 
+from stocks
+
+
+#--------------------------------------------------------------------------
+#-------------------------- ROW_NUMBER ------------------------------------
+# Row number will return the continuous sequence of numbers for all the 
+# rows of the result set of the over clause.
+#--------------------------------------------------------------------------
+
+select ticker,
+     close,
+     row_number() over(partition by ticker order by close) as num 
+from stocks
+
+#--------------------------------------------------------------------------
+#-------------------------- CUME_DIST ------------------------------------
+# It returns the cumulative distribution of a value. It results from 0 to 1. 
+# For suppose if the total number of records are 10 then for the 1st row the 
+# cume_dist will be 1/10 and for the second 2/10 and so on till 10/10.
+
+# This cume_dist will be calculated in accordance with the result set returned 
+# by the over clause. The below query will result in the cumulative of each 
+# record for every ticker.
+#--------------------------------------------------------------------------
+
+select ticker,
+   close, 
+   cume_dist() over(partition by ticker order by close) as cummulative 
+from stocks
+
+#--------------------------------------------------------------------------
+#-------------------------- NTILE ------------------------------------
+# It returns the bucket number of the particular value. For suppose if you 
+# say Ntile(5) then it will create 5 buckets based on the result set of the 
+# over clause after that it will place the first 20% of the records in the 
+# 1st bucket and so on till 5th bucket.
+
+# The below query will create 5 buckets for every ticker and the first 20% 
+# records for every ticker will be in the 1st bucket and so on.
+#--------------------------------------------------------------------------
+
+select ticker, 
+       close,
+       ntile(5) over(partition by ticker order by close ) as bucket 
+from stocks
+
+
+
+
+
+

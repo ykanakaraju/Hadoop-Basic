@@ -1,0 +1,398 @@
+--------------------------------------------------------------------
+                         GENERAL INFO
+--------------------------------------------------------------------
+ 
+ $hive -f empinfo.hql       --> This command launched fom a linux shell and executes a script file
+
+ show functions;            --> shows list of functions available in hive
+  
+ describe function length   --> gives usage descriptin about a function
+
+ ! : you can use ! to invoke linux & hdfc command from hive shell
+ ex: hive> ! hadoop fs -ls
+
+ set hive.cli.print.current.db=true;   -> To show db name
+--------------------------------------------------------------------
+		 BEELINE SHELL
+--------------------------------------------------------------------
+$ beeline
+beeline> !connect jdbc:hive2://quickstart:10000 cloudera cloudera org.apache.hive.jdbc.HiveDriver
+
+0:jdbc:hive2://quickstart:10000> show databases;  
+
+--------------------------------------------------------------------
+		  BASIC COMMANDS
+--------------------------------------------------------------------
+
+ create database if not exists <database-name>;
+
+ show databases;
+
+ use <database-name>;
+
+ show tables;
+
+ describe <table-name>;
+
+ describe extended <table-name>;  --> gives a lot more info about the table
+
+ show partitions <table-name>;    --> lists the partitions created for a table
+
+--------------------------------------------------------------------
+		  CREATE TABLE  & CTAS Construct
+--------------------------------------------------------------------
+
+--- Managed table ---
+CREATE TABLE empinfo (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+
+--- External table ---
+CREATE EXTERNAL TABLE empexternal(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/emp_external';
+
+
+--- Partitioned table (two level partions) ---
+CREATE TABLE logs (ts BIGINT, line STRING)
+PARTITIONED BY (dt STRING, country STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+
+--- Bucketed table ---
+CREATE TABLE bucketed_users (id INT, name STRING)
+CLUSTERED BY (id) 
+SORTED BY (id ASC) 
+INTO 4 BUCKETS;
+
+--- Create an empty table with same schema as an existing table ---
+CREATE TABLE <new_table> LIKE <existing_table>;
+
+--- CTAS ---
+CREATE TABLE target AS SELECT col1, col2 FROM source;
+
+--- Create table with complex data types ----------
+CREATE TABLE complex_data
+(col1 array<string>,
+ col2 map<int,string>,
+ col3 struct<name:string,score:int>)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+COLLECTION ITEMS TERMINATED BY '/'
+MAP KEYS TERMINATED BY ':'
+LINES TERMINATED BY '\n'
+
+---- complex data set example for the above table ----
+Hadoop/HDFS/MR/Hive/Sqoop,1100:Virat/1101:Sachin/1102:Dhoni,Ram/80
+HDFS/MR/Hive/Hadoop/Sqoop,1100:Virat/1101:Sachin/1102:Dhoni,Laxman/75
+Hadoop/HDFS/MR/Hive/Sqoop,1100:Virat/1101:Sachin/1102:Dhoni,Bharat/70
+
+
+
+--------------------------------------------------------------------
+		DATA LOADING 
+--------------------------------------------------------------------
+
+LOAD DATA LOCAL INPATH '<local linux file path>'
+OVERWRITE INTO TABLE <table name>
+
+
+LOAD DATA INPATH '<hdfs file path>'
+OVERWRITE INTO TABLE <table name>
+
+
+--loading data into external table --
+LOAD DATA LOCAL INPATH '<local linux file path>' INTO TABLE <table name>
+
+
+--loading data into partitioned table --
+LOAD DATA LOCAL INPATH 'input/hive/partitions/file1' INTO TABLE logs
+PARTITION (dt='2001-01-01', country='IN');
+
+--------------------------------------------------------------------
+		IMPORTING DATA USING INSERT
+--------------------------------------------------------------------
+NOTE:
+~~~~
+INSERT INTO  	 => Adds/Append to existing data
+INSERT OVERWRITE => Replaces the existing data (if any)
+
+-- load data into partition table with existing table data ----
+INSERT OVERWRITE TABLE emp_part
+PARTITION (country='IN')
+SELECT empid, ename, salary, deptid FROM emp;
+
+
+-- load data into partition table with dynamic partitioning ----
+
+set hive.exec.dynamic.partition.mode=nonstrict
+
+INSERT OVERWRITE TABLE target
+PARTITION (country)
+SELECT empid, ename, salary, deptid, country FROM emp;
+
+
+-- load data into bucketed table with existing table data ----
+
+set hive.enforce.bucketing = true;
+
+INSERT OVERWRITE TABLE emp_bucketed
+SELECT <columns-list> from <table-name> 
+WHERE <where clause>
+
+-- load data into external directory  ----
+INSERT OVERWRITE DIRECTORY '/user/cloudera/hbase_student_info' 
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t' 
+SELECT * FROM hbase_student_info
+
+
+-- multitable insert ----------------
+FROM records2
+  INSERT OVERWRITE TABLE stations_by_year
+    SELECT year, COUNT(DISTINCT station) GROUP BY year
+  INSERT OVERWRITE TABLE records_by_year
+    SELECT year, COUNT(1) GROUP BY year
+  INSERT OVERWRITE TABLE good_records_by_year
+    SELECT year, COUNT(1)
+    WHERE temperature != 9999 AND quality IN (0, 1, 4, 5, 9)
+    GROUP BY year;
+
+
+--------------------------------------------------------------------
+	  QUERYING DATA FROM BUCKET TABLES
+--------------------------------------------------------------------
+
+SELECT * FROM <table-name> TABLESAMPLE (BUCKET 1 OUT OF 2 on empid)
+
+SELECT * FROM <table-name> TABLESAMPLE (BUCKET 1 OUT OF 2 on rand())
+
+--------------------------------------------------------------------
+   BINARY STORAGE FORMATS - avro, sequencefile, parquet, rc, orc
+--------------------------------------------------------------------
+# ... avro .....
+SET hive.exec.compress.output = true;
+SET avro.output.codec = snappy;
+CREATE TABLE ... STORED AS AVRO;
+
+
+# ... sequencefile .....
+CREATE TABLE ... STORED AS SEQUENCEFILE;
+
+
+# ... parquet .....
+CREATE TABLE users_parquet STORED AS PARQUET
+AS
+SELECT * FROM users;
+
+
+#... Using a custom SerDe: RegexSerDe ...
+## .. in this example RegexSerDe is a java class that implements 
+## .. org.apache.hadoop.hive.contrib.serde2.RegexSerDe class.
+
+CREATE TABLE stations (usaf STRING, wban STRING, name STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'
+WITH SERDEPROPERTIES (
+"input.regex" = "(\\d{6}) (\\d{5}) (.{29}) .*"
+);
+
+--------------------------------------------------------------------
+	ALTER - Alter Table defitions, Partitions etc.
+--------------------------------------------------------------------
+
+-- rename a table ---
+ALTER TABLE <table-name> RENAME TO <new-name>;
+
+--renaming a partition --
+ALTER TABLE employee PARTITION (country='cn') RENAME TO PARTITION (country='CN');
+
+-- add a column to an existing table --- 
+ALTER TABLE <table-name> ADD COLUMNS (new_column STRING);
+
+-- add a new partition to a partioned table ---
+ALTER TABLE emp ADD PARTITION (country='CN') LOCATION '<directory-path>';
+
+-- change a column name and type ---
+ALTER TABLE emp CHANGE empname ename STRING;
+ALTER TABLE emp CHANGE empname ename STRING AFTER empid;
+
+-- alter table location / partition location --
+ALTER TABLE emp SET LOCATION '<directory-path>';
+ALTER TABLE emp PARTITION (country = 'IN') SET LOCATION '<directory-path>';
+
+--------------------------------------------------------------------
+				QUERYING DATA
+--------------------------------------------------------------------
+
+-- using DISTRIBUTE BY & SORT BY clauses ------
+FROM records
+SELECT year, temparature
+DISTRUBUTE BY year
+SORT BY year ASC, temparature DSC
+
+-- inner join -----------------
+SELECT sales.*, things.* FROM sales JOIN things ON (sales.id = things.id);
+
+-- left outer join ------------
+SELECT sales.*, things.* FROM sales LEFT OUTER JOIN things ON (sales.id = things.id);
+
+-- right outer join ------------
+SELECT sales.*, things.* FROM sales RIGHT OUTER JOIN things ON (sales.id = things.id);
+
+-- full outer join ------------
+SELECT sales.*, things.* FROM sales FULL OUTER JOIN things ON (sales.id = things.id);
+
+-- EXPLAIN Keyword - gives info about MR jobs launched -------
+EXPLAIN SELECT sales.*, things.* FROM sales JOIN things ON (sales.id = things.id);
+
+--- SubQuery -----------
+SELECT station, year, AVG(max_temperature)
+FROM (
+	SELECT station, year, MAX(temperature) AS max_temperature
+	FROM records2
+	WHERE temperature != 9999 AND quality IN (0, 1, 4, 5, 9)
+	GROUP BY station, year
+) mt
+GROUP BY station, year;
+
+
+--------------------------------------------------------------------
+		           VIEWS
+--------------------------------------------------------------------
+
+CREATE VIEW emp_view_us
+AS SELECT * FROM empid, ename, salary, deptid FROM emp WHERE country='US';
+
+CREATE VIEW emp_view_us_avgsal (deptid, average_salary)
+AS 
+SELECT deptid, AVG(salary) FROM emp_view_us GROUP BY deptid;
+
+
+--------------------------------------------------------------------
+		USER DEFINED FUNCTIONS (UDF)
+--------------------------------------------------------------------
+
+* User Defined Functions are of three types:
+  
+  ** UDF : Operates on Single row and produces a single row.
+  ** UDAF : User Defined Aggregate Function : Openarates on multiple rows and returns a single row
+  ** UDAF : User Defined Table generating Functions. Takes single row and returns a table (multiple rows)
+
+
+* A UDF functions are implemented as java files and packaged as jar file and added to the hive path. and then a 
+  temporary function can be registered to make use of that function. 
+
+
+* UDF extended org.apache.hadoop.hive.ql.exec.UDF  (or UDAF or UDTF as the case may be)
+
+
+* The java project must include the following external reference libraries:
+   ** /usr/lib/hadoop/hadoop-common.jar
+   ** /usr/lib/hive/lib/hive-exec-0.10.0.cdh4.7.0.jar
+   ** /usr/lib/hive/lib/hive-serde-0.10.0.cdh4.7.0.jar
+
+
+Registering JAR File:
+
+  hive>  ADD JAR /home/cloudera/hive/udf-example.jar   (no quotes)
+
+Create a User Define Function:
+
+  hive> CREATE TEMPORARY FUNCTION strip AS 'com.sample.Strip'	
+  
+
+
+===========================
+
+CREATE TABLE students_country_batch (id int, name string, mobile string, email string, project string, country string, batch int)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+
+CREATE TABLE students_part_batch(id int, name string, mobile string, email string, project string, country string)
+PARTITIONED BY (batch int)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE
+
+CREATE TABLE student_info(id int, name string, mobile string, email string, topic string) 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+
+INSERT OVERWRITE TABLE students_part_batch
+PARTITION (batch=1)
+select id, name, mobile, email, project, country from students_country where batch = 1
+
+
+
+CREATE TABLE students_buckets (id int, name string, mobile string, email string, project string, country string, batch int)
+CLUSTERED BY (id) 
+SORTED BY (id ASC) 
+INTO 4 BUCKETS;
+
+
+INSERT OVERWRITE TABLE students_buckets 
+SELECT id, name, mobile, email, project, country, batch FROM students_country;
+
+
+!hadoop fs -ls /user/hive/warehouse/iiitbasara.db/students_buckets;
+
+
+SELECT * FROM students_buckets TABLESAMPLE (BUCKET 1 OUT OF 4);
+
+---complex data types----
+
+CREATE TABLE complex_data
+(col1 array<string>,
+ col2 map<int,string>,
+ col3 struct<name:string,score:int>)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+COLLECTION ITEMS TERMINATED BY '/'
+MAP KEYS TERMINATED BY ':'
+LINES TERMINATED BY '\n'
+
+
+load data local inpath '/home/cloudera/datasets/complex_data_1.txt' 
+overwrite into table complex_data;
+
+
+select col1[0], col1[1], col2[1101], col3.name, col3.score from complex_data;
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,88 @@
+CREATE TABLE tab_dates(dt DATE, ts TIMESTAMP, dtstr STRING);
+
+INSERT INTO tab_dates (dt, ts, dtstr) VALUES 
+('2020-01-02', '2020-01-02 23:43:55.605', '20200102')
+,('2020-01-03', '2020-01-03 23:43:55.605', '20200103')
+,('2020-01-04', '2020-01-04 23:43:55.605', '20200104')
+,('2020-01-05', '2020-01-05 23:43:55.605', '20200105')
+,('2020-01-06', '2020-01-06 23:43:55.605', '20200106')
+,('2020-01-07', '2020-01-07 23:43:55.605', '20200107')
+
+#########################################################
+   Some Quick Date Operations
+#########################################################
+
+--UNIX_TIMESTAMP gives the number of seconds from unix epoch (1970-01-01 00:00:00 UTC)
+
+SELECT UNIX_TIMESTAMP();
+
+-- UNIX_TIMESTAMP can be converted to a STRING that represents the TIMESTAMP of that 
+-- moment in the current system time zone
+SELECT FROM_UNIXTIME(UNIX_TIMESTAMP()); 
+
+-- get current timestamp value
+SELECT CURRENT_TIMESTAMP(); 
+
+-- convert timestamp to date
+SELECT TO_DATE(ts) FROM tab_dates;
+
+--convert a string to unix-timestamp
+SELECT UNIX_TIMESTAMP('20200101' ,'yyyyMMdd')
+
+-- convert a string to a date formatted string
+select from_unixtime(unix_timestamp('20140228' ,'yyyyMMdd'), 'yyyy-MM-dd');
+
+-- convert a string to a date type
+select to_date(from_unixtime(unix_timestamp('20140228' ,'yyyyMMdd'), 'yyyy-MM-dd'));
+
+select to_date(from_unixtime(unix_timestamp(dtstr ,'yyyyMMdd'), 'yyyy-MM-dd')) from tab_dates;
+
+
+
+########  Time zone conversions #########
+
+-- This function assumes that the string in the first expression is UTC and then, 
+-- converts that  string to the time zone of the second expression.
+
+SELECT  from_utc_timestamp('2020-01-01 07:00:00', 'IST'); 
+
+SELECT to_utc_timestamp ('2020-01-01 00:00:00','America/Denver');
+SELECT to_utc_timestamp ('2020-01-01 00:00:00','IST');
+
+select ts, to_utc_timestamp(ts,'America/Denver'), from_utc_timestamp(ts, 'IST') from tab_dates;
+
+
+
+##########  Extract Date components from date string ########
+
+SELECT dt, YEAR(dt), YEAR(ts) FROM tab_dates;
+
+SELECT dt, YEAR(dt), MONTH(dt), DAY(dt), DAYOFMONTH(dt), WEEKOFYEAR(dt) FROM tab_dates;
+
+SELECT ts, HOUR(ts), MINUTE(ts), SECOND(ts), HOUR('2020-03-10 10:30:45') FROM tab_dates;
+
+
+
+########## DATE Arithmatic ###############
+
+SELECT dt, DATE_ADD(dt, 5), DATE_SUB(dt, 5) from tab_dates;
+
+
+########## DATE CONVERSIONS ##############
+
+create table test_dates(id int, ch_dt_last_nonmon double, ch_open_dt double, ch_dt_status_chg double, chd_cr_line_dt double, chd_cr_score_dt double, strdate string) row format delimited fields terminated by ',';
+
+load data local inpath '/home/cloudera/hive/hive_commands/test_dates_data.csv' into table test_dates;
+
+
+create view test_dates_view as 
+select cast(substring(from_unixtime(unix_timestamp(cast(ch_dt_last_nonmon as string), 'yyMMdd')),1,10) as date) as ch_dt_last_nonmon, 
+cast(substring(from_unixtime(unix_timestamp(cast(ch_open_dt as string), 'yyMMdd')),1,10) as date) as ch_open_dt, 
+cast(substring(from_unixtime(unix_timestamp(cast(ch_dt_status_chg as string), 'yyMMdd')),1,10) as date) as ch_dt_status_chg,cast(substring(from_unixtime(unix_timestamp(lpad(cast(chd_cr_line_dt as int),4,'0'), 'MMyy')),1,10) as date) as chd_cr_line_dt, 
+cast(substring(from_unixtime(unix_timestamp(lpad(cast(chd_cr_score_dt as int),4,'0'), 'MMyy')),1,10) as date) as chd_cr_score_dt, 
+cast(from_unixtime(unix_timestamp(substring(strdate,1,17), 'MMddyyyy HH:mm:ss')) as timestamp) as strdate 
+from test_dates;
+
+select * from test_dates_view;
+
+describe test_dates_view;
