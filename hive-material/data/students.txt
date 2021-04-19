@@ -1,0 +1,26 @@
+ID	Name	Mobile	Email	ProjectTopic
+1	B.Bhavani	7032537904	bachamgaribhavani1998@gmail.com	Data Science
+2	E.Rajitha	9652292889	rajitha1901@gmail.com	Data Science
+3	K.Shiva Satya	9550824226	chinni.kayala@gmail.com	Data Science
+4	L.Sannidhi	7032452602	sannidhilatti@gmail.com	Data Science
+5	M.Chaitanya	7893471363		Data Science
+6	M.Ravali	9542337873		Data Science
+7	N.Durga Bhavani	8332017118	bhavaniabhisha@gmail.com	Data Science
+8	O.Rajani	8978535759	rajaniogguiiit@gmail.com	Data Science
+9	S.Rekha	9160898795	rekhasuddala@gmail.com	Data Science
+10	V.Sai Keerthana	9441676007	saikeerthana.vemula@gmail.com	Data Science
+11	V.Shireesha	9652995187	shirisha.iiit316@gmail.com	Data Science
+12	A.Chaitanyasri	7893739894	chaithuanagandula143@gmail.com	Spark & Scala - Streaming
+13	B.Vijayalakshmi	9493437261	vijayalaxmi1151@gmail.com	Spark & Scala - Streaming
+14	Ch. Safala	8332932134	safala.chinnapaka11@gmail.com	Spark & Scala - Streaming
+15	G.Mahananda	8374553715	g.mahananda.8008@gmail.com	Spark & Scala - Streaming
+16	G.Sangeetha	9553576998	sangeethagaje@gmail.com	Spark & Scala - Streaming
+17	G.Shireesha	9666292302	g.shireesha.1092@gmail.com	Spark & Scala - Streaming
+18	M.Neeharika	9949737588	m.neeharika.98@gmail.com	Spark & Scala - Streaming
+19	M.Rajeshwari	766103656	rani.marri11@gmail.com	Spark & Scala - Streaming
+20	N.Samatha	8179552252	samatha1100@gmail.com	Spark & Scala - Streaming
+21	P.Sumanjali	9912986567	sumareddy584@gmail.com	Spark & Scala - Streaming
+22	P.Shivani	9959499448	shivani83198@gmail.com	Spark & Scala - Streaming
+23	P.Vasantha	9505799755		Spark & Scala - Streaming
+24	S.Shirisha	9866505106	s.shirisha.98@gmail.com	Spark & Scala - Streaming
+25	V.Shruthi	8096759268	sruthigoudveeragoni@gmail.com	Spark & Scala - Streaming

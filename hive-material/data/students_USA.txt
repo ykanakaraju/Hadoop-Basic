@@ -1,0 +1,8 @@
+ID	Name	Mobile	Email	ProjectTopic
+9	S.Rekha	9160898795	rekhasuddala@gmail.com	Data Science
+10	V.Sai Keerthana	9441676007	saikeerthana.vemula@gmail.com	Data Science
+11	V.Shireesha	9652995187	shirisha.iiit316@gmail.com	Data Science
+12	A.Chaitanyasri	7893739894	chaithuanagandula143@gmail.com	Spark & Scala - Streaming
+13	B.Vijayalakshmi	9493437261	vijayalaxmi1151@gmail.com	Spark & Scala - Streaming
+14	Ch. Safala	8332932134	safala.chinnapaka11@gmail.com	Spark & Scala - Streaming
+15	G.Mahananda	8374553715	g.mahananda.8008@gmail.com	Spark & Scala - Streaming

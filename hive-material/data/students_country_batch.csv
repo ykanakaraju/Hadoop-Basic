@@ -1,0 +1,55 @@
+ID,Name,Mobile,Email,ProjectTopic,Country,Batch
+1,B. Bhavani,7032537904,bachamgaribhavani1998@gmail.com,Data Science,India,1
+2,E. Rajitha,9652292889,rajitha1901@gmail.com,Data Science,USA,2
+3,K. Shiva Satya,9550824226,chinni.kayala@gmail.com,Data Science,UK,3
+4,L. Sannidhi,7032452602,sannidhilatti@gmail.com,Data Science,Germany,1
+5,M. Chaitanya,7893471363,,Data Science,India,1
+6,M.Ravali,9542337873,,Data Science,USA,2
+7,N.Durga Bhavani,8332017118,bhavaniabhisha@gmail.com,Data Science,UK,1
+8,O. Rajani,8978535759,rajaniogguiiit@gmail.com,Data Science,Germany,2
+9,S. Rekha,9160898795,rekhasuddala@gmail.com,Data Science,India,1
+10,V. Sai Keerthana,9441676007,saikeerthana.vemula@gmail.com,Data Science,USA,2
+11,V. Shireesha,9652995187,shirisha.iiit316@gmail.com,Data Science,UK,3
+12,A. Chaitanyasri,7893739894,chaithuanagandula143@gmail.com,Spark & Scala - Streaming,Germany,4
+13,B. Vijayalakshmi,9493437261,vijayalaxmi1151@gmail.com,Spark & Scala - Streaming,India,1
+14,Ch.  Safala,8332932134,safala.chinnapaka11@gmail.com,Spark & Scala - Streaming,USA,2
+15,G. Mahananda,8374553715,g.mahananda.8008@gmail.com,Spark & Scala - Streaming,UK,4
+16,G. Sangeetha,9553576998,sangeethagaje@gmail.com,Spark & Scala - Streaming,Germany,3
+17,G.Shireesha,9666292302,g.shireesha.1092@gmail.com,Spark & Scala - Streaming,India,1
+18,M. Neeharika,9949737588,m.neeharika.98@gmail.com,Spark & Scala - Streaming,USA,2
+19,M. Rajeshwari,766103656,rani.marri11@gmail.com,Spark & Scala - Streaming,UK,3
+20,N. Samatha,8179552252,samatha1100@gmail.com,Spark & Scala - Streaming,Germany,4
+21,P. Sumanjali,9912986567,sumareddy584@gmail.com,Spark & Scala - Streaming,India,1
+22,P.Shivani,9959499448,shivani83198@gmail.com,Spark & Scala - Streaming,USA,2
+23,P.Vasantha,9505799755,,Spark & Scala - Streaming,UK,3
+24,S.Shirisha,9866505106,s.shirisha.98@gmail.com,Spark & Scala - Streaming,Germany,3
+25,V. Shruthi,8096759268,sruthigoudveeragoni@gmail.com,Spark & Scala - Streaming,India,1
+26,N.Sindhu,7095194918,sindhuchowdary689@gmail.com,hadoop framework,USA,2
+27,M.Chinnari,9177717105,merapureddichinnari@gmail.com,hadoop framework,UK,3
+28,B. Bhavani,7032537904,bachamgaribhavani1998@gmail.com,Data Science,India,2
+29,E. Rajitha,9652292889,rajitha1901@gmail.com,Data Science,USA,3
+30,K. Shiva Satya,9550824226,chinni.kayala@gmail.com,Data Science,UK,4
+31,L. Sannidhi,7032452602,sannidhilatti@gmail.com,Data Science,Germany,2
+32,M. Chaitanya,7893471363,,Data Science,India,3
+33,M.Ravali,9542337873,,Data Science,USA,2
+34,N.Durga Bhavani,8332017118,bhavaniabhisha@gmail.com,Data Science,UK,1
+35,O. Rajani,8978535759,rajaniogguiiit@gmail.com,Data Science,Germany,2
+36,S. Rekha,9160898795,rekhasuddala@gmail.com,Data Science,India,2
+37,V. Sai Keerthana,9441676007,saikeerthana.vemula@gmail.com,Data Science,USA,3
+38,V. Shireesha,9652995187,shirisha.iiit316@gmail.com,Data Science,UK,1
+39,A. Chaitanyasri,7893739894,chaithuanagandula143@gmail.com,Spark & Scala - Streaming,Germany,2
+40,B. Vijayalakshmi,9493437261,vijayalaxmi1151@gmail.com,Spark & Scala - Streaming,India,1
+41,Ch.  Safala,8332932134,safala.chinnapaka11@gmail.com,Spark & Scala - Streaming,USA,3
+42,G. Mahananda,8374553715,g.mahananda.8008@gmail.com,Spark & Scala - Streaming,UK,2
+43,G. Sangeetha,9553576998,sangeethagaje@gmail.com,Spark & Scala - Streaming,Germany,4
+44,G.Shireesha,9666292302,g.shireesha.1092@gmail.com,Spark & Scala - Streaming,India,1
+45,M. Neeharika,9949737588,m.neeharika.98@gmail.com,Spark & Scala - Streaming,USA,2
+46,M. Rajeshwari,766103656,rani.marri11@gmail.com,Spark & Scala - Streaming,UK,4
+47,N. Samatha,8179552252,samatha1100@gmail.com,Spark & Scala - Streaming,Germany,3
+48,P. Sumanjali,9912986567,sumareddy584@gmail.com,Spark & Scala - Streaming,India,2
+49,P.Shivani,9959499448,shivani83198@gmail.com,Spark & Scala - Streaming,USA,1
+50,P.Vasantha,9505799755,,Spark & Scala - Streaming,UK,3
+51,S.Shirisha,9866505106,s.shirisha.98@gmail.com,Spark & Scala - Streaming,Germany,1
+52,V. Shruthi,8096759268,sruthigoudveeragoni@gmail.com,Spark & Scala - Streaming,India,2
+53,N.Sindhu,7095194918,sindhuchowdary689@gmail.com,hadoop framework,USA,3
+54,M.Chinnari,9177717105,merapureddichinnari@gmail.com,hadoop framework,UK,2
