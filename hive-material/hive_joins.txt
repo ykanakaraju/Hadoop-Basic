@@ -1,0 +1,134 @@
+CREATE TABLE IF NOT EXISTS stocks 
+(stock_exchange STRING, symbol STRING, trxn_date DATE, open DOUBLE, 
+high DOUBLE,low DOUBLE, close DOUBLE, volumn INT,adj_close DOUBLE)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/datasets/stocks' 
+OVERWRITE INTO TABLE stocks; 
+
+
+CREATE TABLE IF NOT EXISTS dividends 
+(stock_exchange STRING, symbol STRING, trxn_date DATE, dividend DOUBLE)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/datasets/dividends' 
+OVERWRITE INTO TABLE dividends; 
+
+
+=================================================
+   JOINS & STREAMING JOINS
+=================================================
+
+ ------------------------------------------------
+ -- regular join
+ ------------------------------------------------
+ SELECT s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM stocks s JOIN dividends d
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol; 
+
+ ------------------------------------------------
+ -- regular join with better placement of tables
+ ------------------------------------------------
+ SELECT s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM dividends d JOIN stocks s
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+
+ ------------------------------------------------
+ -- stream join hint (stream a table to reducer)
+ ------------------------------------------------
+ SELECT /*+ STREAMTABLE(s) */
+ s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM stocks s JOIN dividends d
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+ 
+
+=================================================
+  Map Joins
+=================================================
+
+ ------------------------------------------------
+ -- map join hint
+ ------------------------------------------------
+ SELECT /*+ MAPJOIN(d) */
+ s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM stocks s JOIN dividends d
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+
+ ------------------------------------------------
+ --property to be set (default is true anyway)
+ ------------------------------------------------
+ set hive.auto.convert.join=true
+
+ set hive.mapjoin.smalltable.filesize = 25000000
+
+ SELECT s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM stocks s JOIN dividends d
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol; 
+
+=================================================
+  Bucket Map Joins
+=================================================
+
+CREATE TABLE IF NOT EXISTS stocks_bkt_8 
+(stock_exchange STRING, symbol STRING, trxn_date DATE, open DOUBLE, 
+high DOUBLE,low DOUBLE, close DOUBLE, volumn INT,adj_close DOUBLE)
+CLUSTERED BY (trxn_date, symbol) INTO 8 BUCKETS 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+CREATE TABLE IF NOT EXISTS dividends_bkt_4 
+(stock_exchange STRING, symbol STRING, trxn_date DATE, dividend DOUBLE)
+CLUSTERED BY (trxn_date, symbol) INTO 4 BUCKETS 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+set hive.enforce.bucketing = true; 
+set hive.optimize.bucketmapjoin = true;
+
+
+INSERT INTO stocks_bkt_8 SELECT * FROM stocks SORT BY trxn_date, symbol;
+
+INSERT INTO dividends_bkt_4 SELECT * FROM dividends SORT BY trxn_date, symbol;
+
+SELECT /*+ MAPJOIN(dividends_bkt_4) */ s.trxn_date, s.symbol, s.adj_close, d.dividend
+FROM stocks_bkt_8 s JOIN dividends_bkt_4 d
+ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+
+=================================================
+  Sort Merge Joins
+=================================================
+
+CREATE TABLE IF NOT EXISTS stocks_bkt_4
+(stock_exchange STRING, symbol STRING, trxn_date DATE, open DOUBLE, 
+high DOUBLE,low DOUBLE, close DOUBLE, volumn INT,adj_close DOUBLE)
+CLUSTERED BY (trxn_date, symbol) INTO 4 BUCKETS 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+INSERT INTO stocks_bkt_4 SELECT * FROM stocks SORT BY trxn_date, symbol;
+
+set hive.auto.convert.sortmerge.join=true;
+set hive.input.format=org.apache.hadoop.hive.ql.io.BucketizedHiveInputFormat;
+set hive.optimize.bucketmapjoin = true;
+set hive.optimize.bucketmapjoin.sortedmerge = true;
+set hive.auto.convert.sortmerge.join.nonconditionaltask=true;
+
+SELECT /*+ MAPJOIN(dividends_bkt_4) */ s.trxn_date, s.symbol, s.adj_close, d.dividend
+FROM stocks_bkt_4 s JOIN dividends_bkt_4 d
+ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+
+
+
+
+
