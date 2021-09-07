@@ -1,0 +1,127 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  Some important file locations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ Default Paths:
+
+        * Cloudera Local Home :  /home/cloudera
+        * HDFS Home: /user/cloudera
+
+ Configuration Files:
+	
+	* /etc/hadoop/config/core-site.xml
+	* /etc/hadoop/config/hdfs-site.xml
+	* /etc/hadoop/config/mapred-site.xml
+
+ There are individual folders for each node in the cluster in directories as shown below :
+  
+        * /etc/hadoop/conf.cloudera.hdfs1
+	* /etc/hadoop/conf.cloudera.mapred1
+	* /etc/hadoop/conf.cloudera.yarn1
+
+ All daemon log files are written under:
+
+	* /var/log/hadoop/
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  HDFS Commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+ * hadoop fs -help   				=> lists all the commands with a brief discription
+ * hadoop fs -help <command-name>  
+ * hadoop fs -chmod -R 755 <file/dir>		=> change permission for a file/directory
+ * hadoop fs -cat <file-name>
+ * hadoop fs -ls
+ * hadoop fs -ls <dir-path>
+ * hadoop fs -ls -R  <dir-path>
+
+ * hadoop fs -cp <source file> <target dir>     => Copies within HDFS frpm source to target
+ * hadoop fs -mv <source file> <target dir>     => Moves within HDFS frpm source to target
+ * hadoop fs -rm -r <file-name/directory-name>
+ 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ Moving files to/from local file system to/from hdfs 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+ * hadoop -copyFromLocal <local file path>  <hdfs file path> 
+ * hadoop -put <local file path>  <hdfs file path> 
+
+ * hadoop -copyToLocal <hdfs file path> <local file path>   
+ * hadoop -get <hdfs file path> <local file path>   
+
+ * hadoop -moveFromLocal <local file path>  <hdfs file path> 
+ * hadoop -moveToLocal <hdfs file path> <local file path> 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ Admin Commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ * sudo -u hdfs hdfs dfsadmin -report   => reports the usage stats of the cluster
+ * sudo -u hdfs hdfs fsck / -files -blocks
+
+Safe Mode:
+
+ * sudo -u hdfs hdfs dfsadmin -safemode leave
+ * sudo -u hdfs hdfs dfsadmin -safemode enter
+ * sudo -u hdfs hdfs dfsadmin -safemode get
+ * sudo -u hdfs hdfs dfsadmin -safemode wait
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ More Commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ * du - disk usage  
+      
+        ex:  hadoop fs -du /user/cloudera
+
+
+ * du -s :   Like -du, but prints a summary of disk usage of all files/directories in the path
+
+        ex: hadoop fs -du -s /user/cloudera
+
+ * df : Shows the capacity, free and used space of the filesystem
+         -h  Formats the sizes of files in a human-readable fashion.
+
+        ex: hadoop fs -df -h /user/cloudera/
+            hadoop fs -df /user/cloudera/
+
+ * getmerge <src> <localDest>    :  Retrieves all files that match the path src in HDFS, 
+                                    and copies them to a single, merged file in the local 
+                                    file system identified by localDest. 
+
+        ex: hadoop fs -getmerge test/*.txt test1/merged.txt
+
+ * Get the replication factor of a file:
+
+        ex: hadoop fs -stat %r test/empinfo.txt
+
+ * Set the replication factor of a file while copying or moving from linux
+
+        ex: hadoop fs -D dfs.replication=5 -copyFromLocal <source> <destination>
+  
+            hadoop fs -D dfs.replication=5 -copyFromLocal datasets/empinfo.txt test2
+            hadoop fs -stat %r test2/empinfo.txt
+
+ * Set the replication factor for an existing file:  -setrep [-R] [-w] <rep-factor> <path>
+       
+        ex: hadoop fs -setrep 2 test2/empinfo.txt   => sets the rep-factor of the file to 2
+	    hadoop fs -stat %r test2/empinfo.txt    => test the rep-factor of the file
+
+ * appendToFile
+
+	Usage: hdfs dfs -appendToFile <localsrc> ... <dst>
+
+	Append single src, or multiple srcs from local file system to the destination file system. 
+	Also reads input from stdin and appends to destination file system.
+
+	hdfs dfs -appendToFile localfile /user/hadoop/hadoopfile
+	hdfs dfs -appendToFile localfile1 localfile2 /user/hadoop/hadoopfile
+	hdfs dfs -appendToFile localfile hdfs://nn.example.com/hadoop/hadoopfile
+	hdfs dfs -appendToFile - hdfs://nn.example.com/hadoop/hadoopfile Reads the input from stdin.
+
+
+ * chmod, chgrp, chown  => Change the permissions of files.
+
+	
