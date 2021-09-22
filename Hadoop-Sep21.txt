@@ -1924,9 +1924,6 @@ TBLPROPERTIES ("hbase.table.name" = "hbaseempinfo");
 					      --topic demotopic1
 					      --property "parse.key=true" 
 					      --property "key.separator=:"
-
-
-
 	
 	5. Launch a Console Consumer
 
@@ -1937,6 +1934,22 @@ TBLPROPERTIES ("hbase.table.name" = "hbaseempinfo");
 					      --property print.key=true 
 					      --property print.value=true 
                                               --property key.separator=" | "
+
+
+		bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 
+					      --topic demotopic1
+					      --partition 0
+					      --offset 0
+
+		bin/kafka-console-consumer.sh --topic demotopic1
+					--bootstrap-server localhost:9092 
+					--group g1
+
+
+	6. Consumer Groups
+
+		bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+
 
 
    What a message can have?
@@ -1962,17 +1975,137 @@ TBLPROPERTIES ("hbase.table.name" = "hbaseempinfo");
 		    across partitions in aload balanced manner.
 
 
+    Single Node, Multiple Broker Setup
+    -----------------------------------
+      
+     -> Create three different copies of server.properties file and modify the following setting:
 
+				broker.id	listeners			log.dirs			     
+	
+	server.properties	0		---				/tmp/kafka-logs		
+	server1.properties      1		listeners=PLAINTEXT://:9093	/tmp/kafka-logs-1
+	server2.properties      2		listeners=PLAINTEXT://:9094	/tmp/kafka-logs-2
+
+
+   Consumers - Standalone Consumer & Consumer Groups  
+   --------------------------------------------------
+
+    Standalone consumer is a consumer that consumes messages from all the partitions of a topic
+    or from a one (or more) partitions
+
+    NOTE: Having a lot of partitions for a topics allows us to launch multiple instances of
+	  standalone consumers, each consuming from 1 partition, there by allowing us to
+	  increase consumer side scalability. 
+	
+	
+   Consumer Groups
+   ---------------
+	-> One or more consumer instances subscribing to the same topic using the same group-id form
+	   a 'consumer group'
+	-> The partitions of the topics are distributed to the consumers in the consumer group.
+    
+        Partition Rebalance
+	-------------------
+	-> Changing the ownership of partitions among the existing consumers in the group is 
+	   called 'rebalance'
+	-> Rebalance happens automatically when a new consumer joins a group or an existing
+           consumer leaves a group.
 	
 
+   Kafka APIs
+   ----------
+ 	-> Kafka APIs allows us to write client applications that interact with Kafka
+	
+	1. Producer API   -> to write producer application
+	2. Consumer API	  -> to write consumer application
+	3. Streams API	  -> to write streaming data processing application that read data from topics,
+			     transform/filter/enrich the data and write to some other topics.
+	4. Connect API	  -> to write cusom source connectors and sink connectors
+			     source conncetor -> apllication that writes to a Kafka topic
+			     sink connector -> reads from a kafka topic and writes to a custom application.
+
+
+   Producer API
+   ------------
+
+    -> Writing a simple Producer Application using Kafka Producer API
+
+	
+	1. Define the properties object where you define all the desired properties. 
+	
+		-> bootstrap.servers 
+		-> key.serializer
+		-> value.serializer		
+
+		 Properties kafkaProps = new Properties();
+	      	 kafkaProps.put("bootstrap.servers", "localhost:9092,localhost:9093,localhost:9094");
+	      	 kafkaProps.put("key.serializer","org.apache.kafka.common.serialization.StringSerializer");         
+	      	 kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+	2. Define the "KafkaProducer" object
+		-> defines a connection to the cluster
+
+		Producer<String, String> producer = new KafkaProducer<>(kafkaProps);
+
+	3. Define you messages using "ProducerRecord" objects
+		ProducerRecord<String, String> record = new ProducerRecord<>(topicName, key, value); 
+
+
+	4. Send the ProducerRecord using "KafkaProducer.send( ProducerRecord )" method.
+
+
+       Sample Program:
+
+
+	    public static void main(String[] args) throws Exception {
+        	   
+	      String topicName = "demotopic3p3r";
+		  
+	      Properties kafkaProps = new Properties();
+	      kafkaProps.put("bootstrap.servers", "localhost:9092,localhost:9093,localhost:9094");
+	      kafkaProps.put("key.serializer","org.apache.kafka.common.serialization.StringSerializer");         
+	      kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+	            
+	      Producer<String, String> producer = new KafkaProducer<>(kafkaProps);				  		   
+		  
+	      System.out.println("Starting KafkaProducerFF ...");	      
+	      	      
+	      String key = "";
+	      String value = "";
+	      
+		  try { 
+			  for (int i = 1; i <= 30; i++) {	
+				  key = "Key " + i;
+				  value = "Java Msg " + i;
+				  
+				  ProducerRecord<String, String> record = new ProducerRecord<>(topicName, key, value); 
+				  
+				  producer.send(record);   
+				  
+				  Thread.sleep(200);
+				  System.out.println("sent message - " + i);		  
+			  }
+		  }
+		  catch (Exception e) { 
+			  e.printStackTrace();			  
+		  } 
+		  
+		  producer.close();
+		  
+		  System.out.println("--- done ---- ");
+	 }
 
 
 
 
+    ProducerRecord
+    --------------
+	-> Represents Kafka message 
 
-
-
-
+	ProducerRecord(String topic, V value)
+	ProducerRecord(String topic, K key, V value)
+	ProducerRecord(String topic, Integer partition, K key, V value)
+	ProducerRecord(String topic, Integer partition, Long timestamp, K key, V value)
 
 
 
