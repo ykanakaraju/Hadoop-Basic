@@ -1,0 +1,1656 @@
+  ----------------------------
+    Agenda
+  ----------------------------
+  Big Data - Basic
+  Hadoop 
+   - HDFS - File Ops & Architecture
+   - YARN - Basics & Architecture
+   - MapReduce - Basics & Examples & Architecture
+  Hive
+  Impala (introduction)
+  Sqoop 
+  HBase
+  Kafka 
+  NiFi
+  Spark ( PySpark ) 
+
+  ==============================================
+
+   Materials
+   
+        => PDF Presentations
+	=> Code Modules  
+	=> Class Notes 
+
+ ===============================================
+
+   Big Data  
+   --------
+     -> Large & Complex Data that can not be reasonbly stored and processed using traditional
+        data management systems that rely on single server architectures.
+
+     	-> Volume 
+	-> Velocity
+	-> Variety  (unstructured & semi structured data)
+	-> Veracity (data in doubt)
+	-> Value (performing deep analytics)
+
+   Big Data Problems
+   -----------------
+	-> Storing huge amount of data
+	-> Processing data faster
+	-> Processing complex data
+
+   => As the problems mainly arise because of the limitations of a single machine, 
+      we solve this by using the combined resource of many machines. 
+	 -> We use "a computing cluster".
+
+   What is a Computing Cluster ?
+   -----------------------------
+     => Is a unified entity that comprises of many nodes whose cumulative resources can be used
+        to stores and process huge amount of data.
+
+   What is Hadoop ?
+   ---------------- 
+    => Hadoop is an open source framework to storage and process big data using a cluster
+       made of commodity hardware. 
+	
+    => Written in Java
+
+	
+	Hadoop  => HDFS 	: Distributed Storage Framework
+		=> MapReduce 	: Distributed Processing Framework
+		=> YARN		: Resource Management Tool (Cluster Manager)
+
+
+   Hadoop Distributed File System (HDFS)
+   -------------------------------------
+	
+     -> Distributed File System
+	
+     -> Stores data in blocks of 128 MB each
+     -> Each block is replicated 3 times by default to provide fail-safety.
+	 --> 3 copies of each block will be there on different nodes
+	
+
+   HDFS Daemons
+   ------------
+	Daemon -> A continuosly running background job (java program)
+
+	1. Name Node (NN)
+		-> Runs on the master machine
+		-> NN receives heart-beats from DNs. 
+		   -> If three successive heart-beats are missed, then the NN marks the DN as "unavailable" 
+
+		-> NN receives block reports and maintains this info in two files:
+                 
+                   1. EditLog file
+			-> dynamic file maintained in the RAM
+
+		   2. FSImage file
+			-> static file which is updated only during check-point process.
+	
+
+	2. Data Node (DN)
+		-> Runs on all the slave machines.
+		-> Data Nodes send heart-beats to NN once every three seconds.
+		-> Data Nodes send "block reports"
+			-> Files, Blocks, ReplicationFactor, Owner, Permissions
+			-> Total storage, Reserverd Storage, Available Storage
+
+	3. Secondary Name Node
+		-> Master Process
+		-> Performs check-pointing once every hour where it merges the edit-log with 
+		   FSIMage files and copies and updated (checkpointed) FSImages file to the master node. 
+
+	4. Balancer
+		-> Maintain replication-factor of files.
+		-> Background job that monitor under-replicated & over-replicated files.		
+		
+
+   Hadoop Distributions
+   -------------------- 
+   
+     => Will provide a collection of pre-packaged and configured tools that are commonly required 
+	for all big data projects, so that we do not have to download, install, configure and tune 
+        those components separtly
+	
+     => Also provide some management tool to manage, monitor, repair, start  & stop services etc. to
+        make managing te cluster easy. 
+	
+    On-Primesis Clusters
+    --------------------
+	1. Cloudera 
+	2. HortonWorks  (merged with Cloudera)
+	3. MapR
+
+    Cloud Clusters
+    ---------------
+	1. AWS    - EMR (Elastic MapReduce - Managed Hadoop Cluster)
+	2. Azure  - HDInsight
+	3. GCP    - DataProc 
+	
+
+    HDFS File Operations   (CDH 4.7)
+    --------------------------------
+      
+      User: cloudera, Password: cloudera
+
+      Home Directory: 
+
+	On Linux File System:  /home/cloudera
+	On HDFS File System:   /user/cloudera
+
+	HDFS Commands => hadoop fs -<command>
+			 hdfs dfs -<command>
+
+     
+    Configuration Files:
+    =====================	
+	* /etc/hadoop/conf/core-site.xml
+	* /etc/hadoop/conf/hdfs-site.xml
+	* /etc/hadoop/conf/mapred-site.xml
+	
+    Hadoop HDFS commands
+    ====================
+
+    NOTE: HDFS is a "non-ediatble' file system
+	  -> You can not edit the content of a HDFS file.
+
+	hadoop fs -help
+	hadoop fs -help cat
+
+	hadoop fs -ls			=> list the files and directories
+	hadoop fs -ls datasets
+	hadoop fs -ls -R practice1	=> recursive listing
+
+	hadoop fs -mkdir practice	=> create a directory
+
+	hadoop fs -rmdir practice	=> delete an empty directory
+
+	hadoop fs -rm practice2/students.txt
+	hadoop fs -rm practice2/students_I*.txt	  => delete one or more files 
+	hadoop fs -rm -R practice1   => recursive delete - deletes a non-empty directory
+
+	hadoop fs -mv practice2/*.sh practice1  => move files/directory from one dir to another within HDFS
+
+	hadoop fs -cp practice1/datasets  practice2 => copy files/directory from one dir to another within HDFS
+	
+	hadoop fs -cat wordcount_input.txt  => display the content on stdout
+
+	hadoop fs -chmod 755 practice1		=> Change permission of files/directories
+	hadoop fs -chmod -R 777 practice1
+
+ 
+   Copy data between Linux & HDFS file systems
+   -------------------------------------------
+    
+	Linux to HDFS:
+		hadoop fs -put <linux-file-path> <hdfs-directory>
+		hadoop fs -copyFromLocal <linux-file-path> <hdfs-directory>
+		hadoop fs -moveFromLocal <linux-file-path> <hdfs-directory>		
+
+		hadoop fs -put users.csv practice1
+     		hadoop fs -copyFromLocal datasets/NYSE_daily.txt practice1
+		hadoop fs -copyFromLocal datasets/NYSE_daily.txt   // copies to home directory	
+		hadoop fs -moveFromLocal dir1/student*.txt practice2   // files deleted from source dir	
+
+		// Copy with a set rep-factor
+		hadoop fs -D dfs.replication=5 -copyFromLocal datasets/NYSE_daily.txt
+
+
+	HDFS to Linux:	
+		hadoop fs -get <hdfs-file-path> <linux-directory>
+		hadoop fs -copyToLocal <hdfs-file-path> <linux-directory>
+
+		hadoop fs -get NYSE_daily.txt dir1
+		hadoop fs -copyToLocal datasets dir1
+
+
+
+   More Commands
+   --------------
+
+ * du - disk usage  
+      
+        ex:  hadoop fs -du /user/cloudera
+
+
+ * du -s : Like -du, but prints a summary of disk usage of all files/directories in the path
+
+        ex: hadoop fs -du -s /user/cloudera
+
+
+ * df : Shows the capacity, free and used space of the filesystem
+         -h  Formats the sizes of files in a human-readable fashion.
+
+        ex: hadoop fs -df -h /user/cloudera/
+            hadoop fs -df /user/cloudera/
+
+
+ * getmerge <src> <localDest>    :  Retrieves all files that match the path src in HDFS, 
+                                    and copies them to a single, merged file in the local 
+                                    file system identified by localDest. 
+
+        ex: hadoop fs -getmerge test/*.txt test1/merged.txt
+	    hadoop fs -getmerge wcout/part-r-* test1/merged.txt
+
+
+ * Get the replication factor of a file:
+
+        ex: hadoop fs -stat %r test/empinfo.txt
+
+
+ * Set the replication factor of a file while copying or moving from linux
+
+        ex: hadoop fs -D dfs.replication=5 -copyFromLocal <sourc e> <destination>
+  
+            hadoop fs -D dfs.replication=5 -copyFromLocal datasets/empinfo.txt test2
+            hadoop fs -stat %r test2/empinfo.txt
+
+
+ * Set the replication factor for an existing file:  -setrep [-R] [-w] <rep-factor> <path>
+       
+        ex: hadoop fs -setrep 2 test2/empinfo.txt   => sets the rep-factor of the file to 2
+	    hadoop fs -stat %r test2/empinfo.txt    => test the rep-factor of the file
+
+
+ * appendToFile
+
+	Usage: hdfs dfs -appendToFile <localsrc> ... <dst>
+
+	Append single src, or multiple srcs from local file system to the destination file system. 
+	Also reads input from stdin and appends to destination file system.
+
+	hdfs dfs -appendToFile localfile /user/hadoop/hadoopfile
+	hdfs dfs -appendToFile localfile1 localfile2 /user/hadoop/hadoopfile
+	hdfs dfs -appendToFile localfile hdfs://nn.example.com/hadoop/hadoopfile
+	hdfs dfs -appendToFile - hdfs://nn.example.com/hadoop/hadoopfile Reads the input from stdin.
+
+ * chmod, chgrp, chown  => Change the permissions of files.	
+     
+   ==============================================
+      YARN  (Yet Another Resource Negotiator)
+   ==============================================
+
+     => Resource Management tool for Hadoop (from Hadoop 2.0 onwards)
+       
+     Basic Components of YARN :
+
+	1. Resource Manager : One per cluster, master daemon
+	2. Node Manager: One per node, slave daemon
+	3. Application Master: One per application/job
+			      (starts when job starts, and closed when the job is completed)
+	4. Containers: Application processes where App Master sends the tasks to be executed.
+
+	Typical application execution with YARN follows this flow:
+	   => Client program submits the MR application to the RM, along with information to launch 
+	      the application-specific Application Master.
+	   => RM negotiates a container for the AM and launches the AM.
+	   => AM boots and registers with the RM, allowing the original calling client to interface 
+	      directly with the AM.
+	   => AM negotiates resources (resource containers) for client application.
+	   => AM gives the container launch specification to the NM, which launches a container for 
+	      the application.
+	   => During execution, client polls AM for application status and progress.
+	   => Upon completion, AM deregisters with the RM and shuts down.
+
+  
+   ==============================================
+      MapReduce
+   ==============================================
+    
+     => Hadoop's default distributed processing framework. 
+	
+     Can be seen from two perspectives:
+
+	=> Map Reduce execution framework lifecycle
+               => How a Mapreduce Program is executed by the MR framework (the life cycle process)
+
+		1. Mapper Phase
+
+		2. Reducer Phase
+
+		    2.1 Shuffle & Sort
+
+		    2.2  Reduce
+
+
+	=> Map Reduce Programming Paradigm
+		=> How should a developer write MR programs	
+
+	   MapReduce Application Classes (that a developer has to write)
+
+		1. Driver Class (required)
+		     => Where you define all the application configurations.
+
+		2. Mapper Class (required)
+		     => Extends "Mapper" base class and implements some life cycle methods:
+		     => Implements "map" method, where you write you application logic.		     
+
+		3. Reducer Class (required only if aggregation is needed)
+		     => Extends "Reducer" base class and implements some life cycle methods.
+		     => Implements "reduce" method, where you write you application logic.
+
+		4. Combiner (Optional)
+		     => Is like a mini-reducer which aggregates the output of each mapper.
+		     => Acts on each mapper's output to reduce the amount of data to be shuffled.
+		     => By reducing the amount of data shuffled, we can increase the performance.
+
+		5. Partitioner (Optional)
+		      => Acts on the output of S&S phase and applies custom logic to decide which
+			 data goes to which partition (and hence to which reducer).
+		      => Is applicably only if you use 2 or more reducers.
+
+
+    MapReduce Framework
+    -------------------
+
+    1. Creates InputSplits
+	-> A logical enity derived from blocks as whole number of records
+	-> Input-Splits can span multiple blocks.
+	-> The number of input splits created is equal to number of mappers lauched. 
+
+	InputFormat => InputSplit => RecordReader
+
+	1. InputFormat creates InputSplits
+	2. RecordReader class reads from InputSplits and creates (K, V) pairs
+
+
+	IS-1
+     [InputSplit]			[RecordReader]
+	[hadoop hive mapreduce hdfs  => (0, hadoop hive mapreduce hdfs)   ==>  map(...)  ==> (hadoop, 1) (hive, 1) (mapreduce, 1) (hdfs, 1)         
+	mapper reducer sqoop flume   => (32, mapper reducer sqoop flume ) ==>  map(...)  ==> (mapper, 1) (reducer,1) (sqoop, 1) (flume, 1)
+	mapreduce hive flume kafka   => (75, mapreduce hive flume kafka )	
+	hadoop hadoop mapreduce	     => (120, hadoop hadoop mapreduce)
+	sqoop flume kafka mapper]    => (154, sqoop flume kafka mapper )
+
+
+     Sort & Shuffle
+     --------------
+	(flume, [1,1,1,1,1,1,1,1,...])       --> reduce(...)  --> (flume, 74)
+	(hadoop, [1,1,1,1,1,1,1,1,...])	     --> reduce(...)  --> (hadoop, 90)
+	(hive, [1,1,1,1,1,1,1,1,...])
+	(scala, [1,1,1,1,1,1,1,1,...])
+
+
+   Hadoop Data Types
+   ------------------
+   
+   => All hadoop framework classes use only Hadoop Custom Data Types
+   => Hadoop custom data type are optimized for Serialization & Deserialization
+
+	Java Type		Hadoop Types
+        ----------              ------------
+	String			Text
+	Int			IntWritable
+	Long			LongWritable
+	Null			NullWritable
+	Double			DoubleWritable
+	Byte			ByTeWriteable
+	Boolean			BoolWritable
+
+
+    Submitting an MR program
+    ------------------------
+
+      	hadoop jar /home/cloudera/wordcount.jar com.cts.WordCountJob wordcount_input.txt wordcount_output
+	yarn jar /home/cloudera/wordcount.jar com.cts.WordCountJob wordcount_input.txt wordcount_output
+
+
+   Mapper Life Cycle
+   -----------------
+
+	1. setup
+		=> Called 'only once' at the beggining before the map method is called.
+		=> Define initialization code here.
+
+	2. map
+		=> Called after setup method.
+		=> Called once per every input (K, V) pair.
+
+	3. cleanup
+		=> Called 'only once'  after map is called for all input records.
+		=> Do any cleaup tasks, clean-up your resources, connections etc. 
+
+	4. run  (not generally overridden)
+
+
+   Reducer Life Cycle
+   ------------------
+	1. setup
+		=> Called 'only once' at the beggining before the reduce method is called.
+		=> Define initialization code here.
+
+	2. reduce
+		=> Called after setup method.
+		=> Called once per every input (K, Iterable[V]) pair.
+
+	3. cleanup
+		=> Called 'only once'  after reduce is called for all input records.
+		=> Do any cleaup tasks, clean-up your resources, connections etc. 
+
+	4. run  (not generally overridden)
+
+
+    Facebook Dataset Analysis
+    -------------------------	
+     
+     Use-Case: From facebook dataset, find out the record with highest 'likes_received' from
+	       among the users who are born between 1990 and 2000.
+
+     Two MR programs:
+	1. age mapper => Filters the records with dob_year between 1990 and 2000
+	2. maxlikes mapper  => Filters the record with highest maxlikes from the output of age mapper.
+
+	In this example there is no need of reduce as this is simple filtering operation.
+	No aggregation is involved, hence no reducer is required. 
+ 
+
+
+   Creating MR java project from scratch 
+   --------------------------------------
+
+	=> Create a Java Project
+	=> Add the following "external jar files" to build path of the Java project
+	   -> /usr/lib/hadoop/hadoop-common.jar
+	   -> /usr/lib/hadoop/hadoop-0.20-mapreduce/hadoop-core.jar
+
+ ===============================================
+     Hive
+ ===============================================
+    
+   -> Data Warehousing Platform built on top of Hadoop
+   -> Hive used HDFS as storage layer and used MapReduce as its execution engine.
+
+   -> Hive provides an SQL abstraction on top of MR, so that user need not write MR programs
+
+   -> Users can send HQL statements to Hive Engine.
+	 -> Hive converts user queries to MR programs and runs them on the cluster.
+   
+     
+    How to work with Hive
+    ---------------------
+
+    1. Command Line Interface (CLI) 
+
+	1. hive shell
+		-> Connects to local Hive engine. No JDBC required.
+
+	2. beeline shell
+		-> preferred in corporate environemnts, as it offers more security
+		-> Connects to Hive engine through JDBC connection.
+
+    2. Using Client applications (JDBC/ODBC Drivers)
+
+    3. Hive User Environemnt (HUE) - (uses Beeswax protocol)  
+
+
+    Hive Components
+    ----------------
+
+	1. Hive Warehouse   
+	   -> Is a hdfs directory, where Hive stores all the data files of managed tables
+	   -> defined in hive-site.xml config file ( /user/hive/warehouse )
+	
+	   -> We will have a default database called "default" 
+	       -> This database will not have any directory of its own 
+
+	   -> We can create user defined databases and tables
+		-> Each user-defined database has a directory in hive warehouse
+
+	  Some Notes
+          ----------
+		=> 'default' database wil not any separate directory in the warehouse.
+
+        2. Metastore
+           -> Usually an external service (such as MySQL) where Hve stores its metadata.
+	
+	
+	
+    Schema on Read
+    ---------------
+     => Hive does not validate the data while loading (schema on write is not supported)
+     => data is validated against the schema while reading the data
+	 -> If the data can not casted to defined types, or is invalid, then Hive will show NULL
+	 -> Hive also shows NULL is empty data. 
+	
+    
+  
+==== Database ===
+
+ create database ctsdb;
+ create database if not exists ctsdb;
+ 
+
+ drop database ctsdb1;   	  // drop an empty database
+ drop database ctsdb1 cascade;    // drop a non-empty database
+
+ // the terms 'database' and 'schema' can be interchangably used.
+ create schema ctsdb;
+ create schema if not exists ctsdb;
+ drop schema ctsdb1;
+
+
+ ==== Tables ====
+
+create table empinfo(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+row format delimited
+fields terminated by ","
+lines terminated by "\n"
+stored as textfile;
+
+
+create table empinfo2(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+row format delimited
+fields terminated by ",";
+
+create table empinfo_tab(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+row format delimited
+fields terminated by "\t";
+
+
+Describe Table 
+--------------
+desc empinfo;
+desc formatted empinfo;
+desc extended empinfo;
+
+
+loading data from data files
+----------------------------
+
+// loading from local file system -- COPY operation
+
+load data local inpath '<file-path>' into table <table-name>    	// append mode
+load data local inpath '<file-path>' overwrite into table <table-name>  // overwrite mode
+
+
+// loading from hdfs -- MOVE operation
+
+load data inpath '<file-path>' into table <table-name>    	  // append mode
+load data inpath '<file-path>' overwrite into table <table-name>  // overwrite mode
+
+examples
+--------
+load data local inpath '/home/cloudera/hive/Hive/data/emp.txt' into table empinfo; 
+load data local inpath '/home/cloudera/hive/Hive/data/emp.txt' overwrite into table empinfo; 
+load data local inpath '/home/cloudera/hive/Hive/data/emp2.txt' into table empinfo; 
+load data local inpath '/home/cloudera/hive/Hive/data/emp_tab.txt' into table empinfo_tab; 
+
+
+   Hive Table Types
+   ----------------
+	=> Managed tables
+	=> External tables
+
+
+   Hive Managed Tables
+   -------------------
+	-> Tables managed by hive
+	-> When you srop a managed table, both schema as well as data are droped. 
+
+
+   Hive External Tables
+   --------------------
+	-> The data of external tables is not managed by Hive.
+	-> External tables are created in a user-specified location (outside of hive warehouse directory)
+
+	-> When you drop an external table:
+		-> ONly the schema of the table is dropped from the metastore
+		-> The datafiles of the table are not dropped. 
+		
+  Partitioned Tables
+  ------------------
+
+    In Hive, Partitions provide a way of dividing a table into coarse-grained parts 
+    based on the value of a partition column, such as a date or country.
+
+    => We can load data into partitioned tables using two approaches:
+	
+	1. Static Partitioning
+
+	   -> When we know precisly into which partition we are loading the data.
+	   -> We can 'load data' command to load data using static partitioning.
+
+	2. Dynamic Partitioning
+
+	   -> When a specific data file can not loaded into any given partition
+		-> Your file may have partition data also and may have data for several partitions.
+
+	   -> Here, the data must be loaded from a base table using "INSERT .. SELECT" command
+		-> We can not use 'load data' command in this case.
+
+
+
+CREATE TABLE students_partition_static (id INT, name STRING, mobile STRING, email STRING, project STRING)
+PARTITIONED BY (country STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+
+show partitions students_partition_static;
+
+CREATE TABLE students_partition_dynamic (id INT, name STRING, mobile STRING, email STRING, project STRING)
+PARTITIONED BY (country STRING, batch INT)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+
+CREATE TABLE students_partition_dynamic_tab (id INT, name STRING, mobile STRING, email STRING, project STRING)
+PARTITIONED BY (country STRING, batch INT)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+
+== loading data into partitioned tables ====
+
+load data local inpath '/home/cloudera/hive/Hive/data/students_IN.txt' into table students_partition_static 
+partition (country = 'UK')
+
+-- loading data using dynamic partitioning method ---
+
+
+-- load data into a base table
+load data local inpath '/home/cloudera/hive/Hive/data/students_country_batch.csv' into table students;
+
+-- make dynamic partition mode to nonstrict
+set hive.exec.dynamic.partition.mode=nonstrict;
+
+-- load data into partitioned table using insert .. select command
+insert into students_partition_dynamic
+partition(country, batch)
+select id, name, mobile, email, project, country, batch from students;
+
+insert into students_partition_dynamic
+partition(country='India', batch)
+select id, name, mobile, email, project, batch from students
+where country = 'India';
+
+insert into students_partition_dynamic
+partition(country='India', batch=1)
+select id, name, mobile, email, project from students
+where country = 'India' and batch=1;
+
+// ERROR
+// Line 2:10 Dynamic partition cannot be the parent of a static partition '1'
+insert into students_partition_dynamic
+partition(country, batch=1)
+select id, name, mobile, email, project, country from students
+where batch=1;
+
+
+// insert overwrite => overwrite mode
+insert overwrite table students_partition_dynamic
+partition(country, batch)
+select id, name, mobile, email, project, country, batch from students;
+
+  NOTE: The data files of the partitioned tables does not contain partition column info
+	The partition info comes from directory-name.
+
+
+    Bucketting of Tables
+    ---------------------
+     => Bucketting adds an additional layer of granularity at the table or at the partition level 
+	where Hive creates fixed number of bucketted files based on hash of a column (called clustered column)
+
+
+--- bucketted table ---
+CREATE TABLE students_bucket (id INT, name STRING, mobile STRING, email STRING, project STRING, country STRING, batch INT)
+CLUSTERED BY (id) 
+INTO 4 BUCKETS;
+
+CREATE TABLE students_bucket_pipe (id INT, name STRING, mobile STRING, email STRING, project STRING, country STRING, batch INT)
+CLUSTERED BY (country) 
+SORTED BY (id) 
+INTO 3 BUCKETS
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '|'
+STORED AS TEXTFILE;
+
+--loading data into bucketted table---
+insert into students_bucket_pipe select * from students; 
+
+-- bucketting a partitioned table
+CREATE TABLE students_part_bucket (id INT, name STRING, mobile STRING, email STRING, project STRING, country STRING)
+PARTITIONED BY (batch INT)
+CLUSTERED BY (id) INTO 3 BUCKETS
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+
+insert into students_part_bucket 
+partition(batch)
+select id, name, mobile, email, project, country, batch from students;
+
+
+ Sampling Commands
+ -----------------
+
+   Three types of sampling queries:
+
+	-> Bucket sampling  -> we sample for some number of buckets
+
+		select * from students_bucket TABLESAMPLE (bucket 1 out of 2 on id) ;
+		select * from students_bucket TABLESAMPLE (bucket 2 out of 5 on id) ;
+
+	-> Block Sampling   -> we sample for some number of blocks
+
+		select * from students TABLESAMPLE (20 percent)    // block sample
+		select * from students TABLESAMPLE (100M)  
+
+	-> Row Sampling     -> we sample for some rows from each input-split.
+
+		select * from students TABLESAMPLE (10 ROWS) 
+
+
+  Managing Outputs
+  ----------------
+
+    Three ways are there to save the output of a query:
+	
+	1. You can save the output to a table
+
+		INSERT OVERWRITE TABLE students2 SELECT * FROM students
+
+	2. You can save the output of a query to a local (linux) directory  
+
+		insert overwrite local directory '/home/cloudera/hive_data/students' 
+		select * from students;
+
+		insert overwrite local directory '/home/cloudera/hive_data/students_pipe' 
+		row format delimited
+		fields terminated by '|'
+		select * from students;
+
+	3. You can save the output of a query to an HDFS directory
+
+		insert overwrite directory '/user/cloudera/hivedata/students_pipe' 
+		row format delimited
+		fields terminated by '|'
+		select * from students;
+
+
+
+   Hadoop File Formats
+   -------------------
+
+	1. Sequence File   -> Stores data as  (K, V) pairs
+
+	2. Parquet	   -> Columnar format file
+			   -> Saves the content of each column physically in one location. 
+
+	3. ORC	   	   -> Columnar format file
+			   -> Saves the content of each column physically in one location. 
+
+	4. Avro		   -> Supports dynamic schema evolutions.
+			      ( Schema of the data is stored as json in the file itself)
+	   
+
+   SORTING
+   --------
+
+   	select * from students order by name
+		=> Order by produces parallel global sort		
+
+	select * from students sort by name
+		=> Produces one sorted file per reducer
+
+	select * from students distribute by country sort by name desc
+		=> Each reducer get data partitioned by country
+
+	select * from students cluster by country
+		=> Short form of distribute by country sort by country'
+
+    
+   Multi-Table insert
+   ------------------
+
+   from students
+	insert into students_usa 
+	select * where country = 'USA'
+	insert into students_uk 
+	select * where country = 'UK'
+	insert into students_india 
+	select * where country = 'India';
+
+
+   Complex Data Types  
+   ------------------
+    CREATE TABLE complex_data
+	(col1 array<string>,
+ 	col2 map<int,string>,
+ 	col3 struct<name:string,score:int>)
+    ROW FORMAT DELIMITED 
+    FIELDS TERMINATED BY ','
+    COLLECTION ITEMS TERMINATED BY '/'
+    MAP KEYS TERMINATED BY ':'
+    LINES TERMINATED BY '\n'
+    STORED AS TEXTFILE;
+
+
+complex data to load
+--------------------
+Apple/Grapes/Orange,4306:Sneha/4307:Renu,Sneha/90
+Apple/Microsoft/Google,4306:Renu/4307:Anita,Raju/100
+Apple/Micromax/Samsung,4306:Raju/4307:Harsha,Harsha/80
+
+
+load data local inpath '/home/cloudera/hive/Hive/hive_complex_data' into table complex_data
+
+
+  queries
+  -------
+  select col1, col2, col3 from complex_data;
+  select col1[0], col1[1], col2[4306], col2[4307], col3.name, col3.name from complex_data;
+
+
+ Table Properties
+ ----------------
+
+show tblproperties emp_tp_metadata ;
+
+show tblproperties emp_tp_metadata('numFiles')
+
+CREATE TABLE emp_tp_metadata 
+(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE 
+TBLPROPERTIES ('creator'='raju', 'created_at'='2020-03-01 10:00:00', 'created_for'='for demo');
+
+load data local inpath '/home/cloudera/hive/Hive/data/emp.txt' into table emp_tp_metadata;
+
+
+ Immutable Tables
+ -----------------
+ 
+CREATE TABLE emp_tp_immutable
+(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE 
+TBLPROPERTIES ("immutable"="true")
+
+show tblproperties emp_tp_immutable("immutable");
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/emp.txt' INTO TABLE emp_tp_immutable;
+
+INSERT INTO TABLE emp_tp_immutable SELECT * FROM empinfo WHERE empid = 101;
+
+INSERT OVERWRITE TABLE emp_tp_immutable SELECT * FROM empinfo WHERE empid = 101;
+
+TRUNCATE TABLE emp_tp_immutable;
+
+SELECT * FROM emp_tp_immutable;
+
+INSERT INTO TABLE emp_tp_immutable SELECT * FROM empinfo;
+
+SELECT * FROM emp_tp_immutable;
+
+ALTER TABLE emp_tp_immutable SET TBLPROPERTIES ("immutable"="false")
+
+INSERT INTO TABLE emp_tp_immutable SELECT * FROM empinfo WHERE empid = 101
+
+ -----------------------------
+
+   Transactional Tables
+   --------------------
+
+	Is a special hive table that supports ACID properties (supports updated and deletes)
+
+	-> table property "transactional" should be set to "true"
+	-> the table storage format must be ORC format.   (STORED AS ORC)
+	-> the table must be 'bucketted' 
+	-> a lot of config params have to set:
+
+		set hive.support.concurrency = true;
+		set hive.enforce.bucketing = true;
+		set hive.exec.dynamic.partition.mode = nonstrict;
+		set hive.txn.manager = org.apache.hadoop.hive.ql.lockmgr.DbTxnManager;
+		set hive.compactor.initiator.on = true;
+		set hive.compactor.worker.threads = 1;
+
+CREATE TABLE user_acid (userid int, name string, age int, gender string)
+CLUSTERED BY (userid) INTO 5 buckets 
+STORED AS ORC
+TBLPROPERTIES('transactional'='true');
+
+INSERT INTO user_acid(userid, name, age, gender) VALUES 
+(1, 'Raju', 40, 'male'), 
+(2, 'Raghu', 42, 'male'),
+(3, 'Vinay', 20, 'male'), 
+(4, 'Amrita', 14, 'female'), 
+(5, 'Aditya', 14, 'male'), 
+(6, 'Keertana', 12, 'female'), 
+(7, 'Pranav', 24, 'male'), 
+(8, 'Hari', 24, 'male'), 
+(9, 'Syamala', 23, 'female')
+
+SELECT * from user_acid;
+
+UPDATE user_acid SET age = 41 where name='Raju';
+
+DELETE FROM user_acid WHERE userid = 9;
+=================================================================
+
+  Joins
+  -----
+
+   Hive supports:
+
+   inner, left-outer, right-outer, full-outer, left-semi.
+
+
+Joins
+-----
+create table emp(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+row format delimited
+fields terminated by ","
+lines terminated by "\n"
+stored as textfile;
+
+create table dept(deptid INT, deptname STRING)
+row format delimited
+fields terminated by ","
+lines terminated by "\n"
+stored as textfile;
+
+ load data local inpath '/home/cloudera/hive/Hive/data/emp.txt' into table emp;
+ load data local inpath '/home/cloudera/hive/Hive/data/dept.txt' into table dept;
+
+ select emp.*, dept.* from emp join dept on emp.deptid = dept.deptid;
+ //select emp.*, dept.* from emp, dept where emp.deptid = dept.deptid;
+
+ select emp.*, dept.* from emp left outer join dept on emp.deptid = dept.deptid;
+ select emp.*, dept.* from emp right outer join dept on emp.deptid = dept.deptid; 
+ select emp.*, dept.* from emp full outer join dept on emp.deptid = dept.deptid; 
+
+
+  Left Semi Join
+  ---------------
+	-> Is same as inner join, but the data comes ONLY from the left side table. 
+	-> Is same as the following sub-query:
+		select * from emp where deptid in (select deptid from dept)	
+
+  select emp.* from emp left semi join dept on emp.deptid = dept.deptid; 
+
+
+  Explode & Lateral Views
+  ========================
+
+create table lateral_view (id int,  phones array<string>, emails array<string>)
+row format delimited
+fields terminated by '\t'
+collection items terminated by ','
+
+1	1111111,11112222	email11@gmail.com,email1122@gmail.com
+2	2222222,22223333	email22@gmail.com,email2222@gmail.com
+3	3333333,33333444	email33@gmail.com,email3322@gmail.com
+4	4444444,44445555	email44@gmail.com,email4422@gmail.com
+5	5555555,55556666	email55@gmail.com,email5522@gmail.com
+6	6666666,66667777	email66@gmail.com,email6622@gmail.com
+7	7777777,77777888	email77@gmail.com,email7722@gmail.com
+
+###########################################
+
+ Lateral View & Explode
+
+###########################################
+
+create table tab_lateral (id int, phones array<string>, emails array<string>)
+row format delimited 
+fields terminated by '\t'
+collection items terminated by ','
+stored as textfile;
+
+load data local inpath '/home/cloudera/hive/Hive/data/lateral_view_data.txt' overwrite into table tab_lateral;
+
+# note: expode can not be merged with any other columns as is.
+# use lateral views if you want to do so.
+
+select explode(phones) from tab_lateral;
+
+select id, phones_l from tab_lateral 
+lateral view explode(phones) p as phones_l;
+
+select id, phones_l, emails_l from tab_lateral 
+lateral view explode(phones) p as phones_l
+lateral view explode(emails) e as emails_l;
+
+--------------------------------------------------------
+
+-- This results in cross product of array values, which is not a good data representaion
+-- Lets breakdown the data properly
+
+create temporary table if not exists tab_lateral_tmp_phones
+(rowid int, id int, phone string)
+row format delimited
+fields terminated by '|';
+
+insert overwrite table tab_lateral_tmp_phones
+select row_number() over(), id, phones_l from tab_lateral 
+lateral view explode(phones) p as phones_l;
+
+create temporary table if not exists tab_lateral_tmp_emails
+(rowid int, id int, email string)
+row format delimited
+fields terminated by '|';
+
+insert overwrite table tab_lateral_tmp_emails
+select row_number() over(), id, emails_l from tab_lateral 
+lateral view explode(emails) p as emails_l;
+
+create table if not exists tab_lateral_breakdown
+(rowid int, id int, phone string, email string)
+row format delimited
+fields terminated by '|';
+
+insert overwrite table tab_lateral_breakdown
+select a.rowid, a.id, a.phone, b.email
+from   tab_lateral_tmp_phones a, tab_lateral_tmp_emails b
+where  a.rowid = b.rowid and a.id = b.id;
+
+
+ Window Functions
+ ----------------
+		
+     empid	dept	salary  sum(salary)
+     -------------------------------------------
+	
+	104	IT	45000	 NULL
+	111	IT	45000 	 NULL  		 
+	110	IT	60000 	45000 
+	101	IT	60000	45000 	
+	105	IT	80000   60000  
+	
+	102	Sales	45000		
+	107	Sales	50000		
+	106	Sales	60000		
+
+	108	HR	35000		
+	103	HR	35000		
+	109	HR	90000		
+	
+       window  => partition by dept rows between 1 preceeding and 1 following
+	
+      select empid, dept, salary, sum(salary) over(partition by dept rows between unbounded preceeding and current row) 
+      from emp;
+
+	 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+	 ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+	 ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+	 ROWS BETWEEN 2 PRECEDING AND CURRENT ROW 
+	 ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING
+
+  Running a script file in Hive
+  ------------------------------------
+  NOTE: Run this from command prompt (not from within the shell)
+
+  hive -f '/home/cloudera/hive/Hive/churn_modelling.hql'
+
+
+  Running Hive commands in interactive mode
+  ----------------------------------------------
+  NOTE: Run this from command prompt (not from within the shell)
+ 
+  hive -e 'select * from ctsdb1.empinfo'
+
+
+ ========================================  
+     Impala
+ ========================================  
+
+   => Impala does not support loading data from local file system
+	-> LOAD DATA LOCAL INPATH ..  command is not supported.
+
+   => Any metadata changes happened outside of impala such as creating databases, tables etc
+      will not be reflected automatically in impala. You have to run the 'invalidate metadata'
+      command to refresh metadata changes.
+
+		=> invalidate metadata;
+
+   => Whenever data is loaded into the tables from outside of impala, the data changes are not
+      auto matically reflected in impala. You have to run 'refresh <table-name>' command
+
+		=> refresh empinfo2;
+
+   When to use Impala ?
+   --------------------
+
+    => Because Impala uses in-memory computations, it does not provie run-time fail-safety.
+        -> If any of the servers/nodes running the impala queries fail, the job will be aborted.
+
+    => Use Hive for long-running queries
+       Use impala for short-running queries
+
+    => Hive is more suited for long running batch jobs, such those involving ETL. 
+
+    => Impala is good for real-time queries while Hive is recommended for large batch jobs.
+	  
+
+ ========================================  
+     Sqoop
+ ======================================== 
+
+    => Structured Data Ingestion Tool  (SQL on Hadoop)
+
+    => Sqoop fecilitates imports (to Hadoop) and export (from hadoop) data to/from RDBMS databases.
+
+  IMPORT
+  ------
+    sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users -m 1 --target-dir /user/cloudera/sqoop2/users1  
+
+    NOTES: The default file format : Text File
+	   The defualt delimiter: comma (,)
+
+
+   sqoop list-databases --connect jdbc:mysql://localhost:3306 --username root -P
+
+   sqoop list-tables --connect jdbc:mysql://localhost:3306/ctsdb --username root -P
+
+
+   ========== IMPORT ================
+
+   Import Modes:
+
+	1. delete mode (overwrite mode)
+		--delete-target-dir
+
+	2. append mode 
+		--append
+
+   sqoop import --connect jdbc:mysql://localhost:3306/empdb
+              --username root
+              --password <password>
+              --table emptable
+              -m 1
+              --target-dir /user/cloudera/empdb
+              --fields-terminated-by ','
+              --lines-terminated-by '\n'
+
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users -m 1 --target-dir /user/cloudera/sqoop2/users1  
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users -m 1 --target-dir /user/cloudera/sqoop2/users_tab --fields-terminated-by '\t'
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users -m 1 --target-dir /user/cloudera/sqoop2/users_pipe --fields-terminated-by '|'
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users --columns 'id,name,phone' -m 1 --target-dir /user/cloudera/sqoop2/users2 --fields-terminated-by ','
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students -m 1 --target-dir /user/cloudera/sqoop2/students
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students -m 1 --target-dir /user/cloudera/sqoop2/students2 --direct
+
+-- import data with query --
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P -m 1 --target-dir /user/cloudera/sqoop2/students4 --query "select * from students where id <= 25 AND \$CONDITIONS"
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P -m 1 --target-dir /user/cloudera/sqoop2/students5 --query "select country, count(*) from students where 1=1 AND \$CONDITIONS group by country"
+
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students -m 1 --target-dir /user/cloudera/sqoop2/students6
+
+-- append mode appends new files to the same directory
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students -m 1 --target-dir /user/cloudera/sqoop2/students6 --append
+
+-- overwrire mode (--delete-target-dir) deletes the directory first recreates the directory.
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students -m 1 --target-dir /user/cloudera/sqoop2/students6 --delete-target-dir
+
+-- using enclosing chars ---
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users -m 1 --target-dir /user/cloudera/sqoop2/users3 --enclosed-by '"'
+
+-- using different file formats ---
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users -m 1 --target-dir /user/cloudera/sqoop2/users_seq --as-sequencefile
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users -m 1 --target-dir /user/cloudera/sqoop2/users_avro --as-avrodatafile
+
+-- import data using multiple mappers --
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students -m 4 --target-dir /user/cloudera/sqoop2/students_m4_id --split-by 'id'
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students -m 4 --target-dir /user/cloudera/sqoop2/students_m4_country --split-by 'country'
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table userspk -m 2 --target-dir /user/cloudera/sqoop2/userspk 
+
+
+   ========== EXPORT ==============
+
+
+===== EXPORT =====
+
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb       
+
+             --table emp2 
+	     --username root 
+	     -P                           			
+	     -m 1                                       			
+
+             --export-dir /user/cloudera/sqoop/demo    		
+
+             --input-fields-terminated-by ','
+
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop2/users1/ --input-fields-terminated-by ',' 
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop2/users_pipe/part-m-00000 --input-fields-terminated-by '|' 
+
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop2/users2/part-m-00000 --input-fields-terminated-by ',' --columns "id,name,phone"
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop/users/part-m-* 
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop/users/
+
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop/users2/part-m-00000 --input-fields-terminated-by ',' --columns "id,name,age"
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop/users2/part-m-00000 --input-fields-terminated-by ',' --columns "age,name,id"
+
+-- this command causes run time exception as the data types are not compatible.
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop/users2/part-m-00000 --input-fields-terminated-by ',' --columns "id,age,name"
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop2/users_avro/part-m-00000.avro
+
+-- does not work - sequence file can not be exported
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop2/users_seq/part-m-00000
+
+-- updating the data in mysql
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir /user/cloudera/sqoop2/users1/part-m-00000 --update-key 'id'
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table users2 --username root -P -m 1 --export-dir  /user/cloudera/sqoop/users3/part-m-00000 --update-key 'id' --update-mode allowinsert
+
+--this one works. the table has a primary key in this case ..
+sqoop export --connect jdbc:mysql://localhost:3306/ctsdb --table userspk --username root -P -m 1 --export-dir  /user/cloudera/sqoop/users3/part-m-00000 --update-key 'id' --update-mode allowinsert
+
+------ import entire database ------
+sqoop import-all-tables --connect jdbc:mysql://localhost:3306/ctsdb --username root -P -m 1 --warehouse-dir /user/cloudera/sqoop2/ctsdb 
+
+------ create hive tables -----------
+sqoop create-hive-table --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users --fields-terminated-by ',' --hive-table sqoopdb.users
+sqoop create-hive-table --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students --fields-terminated-by '|' --hive-table sqoopdb.students
+
+------ import data into hive tables -----------
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table users --fields-terminated-by ',' -m 1 --hive-table sqoopdb.users --hive-import 
+sqoop import --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --table students --fields-terminated-by '|' -m 1 --hive-table sqoopdb.students --hive-import 
+
+
+------ eval - run sql statement on traget rdbms database ---------
+sqoop eval --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --query 'select * from students limit 5'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --query 'create table emp (id int, name varchar(30), age int)'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --query 'insert into emp (id, name, age) values (1, "Raju", 45), (2, "Ramesh", 35), (3, "Raghu", 25)'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --query 'update emp set name = "Kanakaraju" where id=1'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --query 'delete from emp where id=1'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --query 'truncate emp'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --query 'drop table emp'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/ctsdb --username root -P --query 'show tables'
+
+
+------- codegen command --------------
+sqoop codegen --connect jdbc:mysql://localhost:3306/ctsdb --table users --class-name Users --username root -P
+
+=========================================
+    HBase 
+=========================================
+ 
+  HBase is a Transactional & Non-relational database built for Hadoop.
+
+     NoSQL Databases
+    
+      	-> Distributed databases that run on clusters
+	-> Non-relational in design
+		-> Follow denormalized table design
+		-> Does not support joins
+	-> Does not follow regid schema
+		-> Supports schema flexibility.
+	 
+    Advantages of NoSQL
+  	-> Support unlimited scalability.
+	-> Support schema evolution
+
+    Types of NoSQL databases:
+	1. Document oriented databases 		   - MongoDB, CouchDB
+	2. Wide Column / Column-family databases   - Cassandra, HBase
+	3. Key-value stores			   - Redis, DynamoDB
+	4. Graph Databases			   - Neo4J 
+
+
+   Hadoop's limitations for transcational processing:
+
+	1. Unstructured Data
+	2. No Random Access - ability to access and modify individual records
+	3. High Latency 
+	4. Not ACID complaint
+   
+   HBase
+  
+     	-> is a ditributed database management system that is part of Hadoop ecosytem.
+	-> based on "Google Big Table" 
+	-> Uses HDFS to store database
+		-> distributed storage
+		-> fault tolerant
+
+   Hbase Vs RDBMS
+   
+	-> HBase does not support SQL
+	
+	-> HBase only supports a basic set of operations (CRUD) on a "single row"
+		-> All operations are applied at row-level
+		-> No JOINs
+		-> No Group By, No Sub-queries
+
+  	-> Denormalized design
+
+	-> Uses column-family oriented storage
+		-> All data of a single column family is physically stored together
+	
+	-> Limited ACID supports
+		-> ACID complaint at row-level.
+	
+   HBase Data Model
+   ----------------
+
+        -> A table consists of column-family
+	       -> Columns are not part of table definition
+	-> A row is defined by arbitrary number of columns with the same "Row-Id"
+		-> Each column belongs to row-id, column-family
+		-> A column has key ( cf:col_name ), timestamp, and a value
+        -> HBase manitains multiple versions of each column.
+	-> Data is stored in sorted order
+	      -> order of sorting -> rowid, column-family, column
+
+
+
+
+  create 'emp', 'contact', 'basic', 'skills', 'salary', 'other' 
+
+  create 't1', {NAME => 'f2', VERSIONS => 2}, {NAME => 'f1', VERSIONS => 5}
+
+----------------------------------------------------------
+   
+put 'emp', '1', 'basic:empid', '100'
+put 'emp', '1', 'basic:name', 'Raju........'
+put 'emp', '1', 'basic:age', '45.......'
+put 'emp', '1', 'contact:phone', '9246657890......'
+put 'emp', '1', 'contact:email', 'raju@gmail.com.......'
+put 'emp', '1', 'skills:rdbms', 'mysql,oracle.......'
+put 'emp', '1', 'salary:basic', '40000'
+
+
+put 'emp', '2', 'basic:empid', '101'
+put 'emp', '2', 'basic:name', 'Komala'
+put 'emp', '2', 'basic:dob', '1980-01-01'
+put 'emp', '2', 'contact:mobile', '9988779988'
+put 'emp', '2', 'contact:email', 'komala@gmail.com'
+put 'emp', '2', 'skills:nosql', 'hbase.mongodb'
+put 'emp', '2', 'salary:basic', '45000'
+put 'emp', '2', 'other:state', 'TS'
+put 'emp', '2', 'other:city', 'Hyderabad'
+
+
+put 'emp', 'A10', 'basic:empid', '103'
+put 'emp', 'A10', 'basic:fname', 'Mahesh'
+put 'emp', 'A10', 'basic:dob', '2000-02-01'
+put 'emp', 'A10', 'contact:city', 'Hyderabad'
+put 'emp', 'A10', 'contact:state', 'TS'
+put 'emp', 'A10', 'contact:email', 'ramesh@gmail.com'
+put 'emp', 'A10', 'skills:nosql', 'hbase'
+put 'emp', 'A10', 'skills:rdbms', 'oracle'
+put 'emp', 'A10', 'salary:basic', '40000'
+put 'emp', 'A10', 'salary:travel', '5000'
+put 'emp', 'A10', 'salary:hra', '10000'
+
+
+-------------------------------------------------
+scan 'emp'    // show all the data
+scan 'emp', {COLUMNS=>['basic:empid', 'basic:name']}
+scan 'emp', {COLUMNS => ['basic:empid', 'basic:name', 'salary:basic'], TIMERANGE => [1634646583848, 1634647619374]}
+-------------------------------------------------
+get 'emp', '1'
+get 'emp', '1', {COLUMN => ['basic:empid', 'basic:fname', 'basic:dob', 'contact:city']}
+get 'emp', '1', {COLUMN => ['basic:empid', 'basic:name', 'basic:dob', 'contact:city'], VERSIONS => 3}
+get 't1', '1', {COLUMN => ['f1:name', 'f2:age'], VERSIONS => 5}
+
+----------------------------------------------------
+
+  there is no 'update' command
+  put command acts as both insert as well as update
+
+put 'emp', '1', 'basic:empid', '100'
+put 'emp', '1', 'basic:name', 'Raju'
+put 'emp', '1', 'basic:age', '45'
+put 'emp', '1', 'contact:phone', '9246657890'
+put 'emp', '1', 'contact:email', 'raju@gmail.com'
+put 'emp', '1', 'skills:rdbms', 'mysql,oracle'
+put 'emp', '1', 'salary:basic', '40000'
+
+get 'emp', '1', {COLUMN => ['basic:empid', 'basic:age'], VERSIONS => 5}
+
+
+##------------ alter an hbase table -------------------
+alter 'emp', NAME => 'basic', VERSIONS => 4 
+alter 't1', NAME => 'f1', VERSIONS => 3 
+alter 't1', NAME => 'f3', VERSIONS => 3
+alter 't1', NAME => 'f3', METHOD => 'delete' 
+
+----- disable ----------
+disable 'emp'
+
+----- enable ----------
+enable 'emp'
+
+------- delete --------------------
+delete 'emp', '1', 'basic:age'
+
+-------  truncate  ----------------
+truncate 't1'
+
+----- drop  ----------
+disable 't1'
+drop 't1'
+
+-------- Hive & HBase Integration ------------
+
+# run this from linux while launching hive shell - this adds the required jar files to the hive path for that session
+$ hive --auxpath /usr/lib/hive/lib/hive-hbase-handler-0.10.0-cdh4.7.0.jar,/usr/lib/hive/lib/hbase.jar,/usr/lib/hive/lib/zookeeper.jar,/usr/lib/hive/lib/guava-11.0.2.jar
+
+
+CREATE TABLE hiveempinfo(key int, empname string, salary double, deptid int) 
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' 
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key, emp:empname, emp:salary, dept:deptid") 
+TBLPROPERTIES ("hbase.table.name" = "hbaseempinfo");
+
+insert into table hiveempinfo select * from empinfo;
+
+
+ =================================================
+    Kafka 
+ =================================================
+
+    Event Streaming :
+    ----------------
+
+     -> A technological foundation for processing data in real time, where businesses are
+        increasingly software dependent and automated. 
+
+     -> Users of software are more software. 
+
+     -> We have to store these event streams durably for processing and reacting to events
+        in real-time as well as 'retrospectivly'.
+     
+     Use Cases of Event Streaming
+    
+       -> Processing payments and transactions in real time (banks, stock exchanges etc)
+       -> Track and monitor trucks. (logistics & automotives)
+       -> Capture and analyze sensor data from IoT devices (factories, hospitals, smart homes)
+       -> Collect and immediatly react to customer interactions
+
+
+   Data Pipelines
+   --------------      
+     -> Is a point to point communication channel that facilitated data transfer in real time
+        between desperate applications that may use dfifferent data formats, protocols etc. 
+
+
+   Messaging System
+   ----------------
+
+      -> A messaging system is a system that is used for transfering data from one application to another
+         so that applications can focus on data and not on how to share the data with other applications. 
+    	
+      Two types of messaging systems:
+
+	 -> Point to Point (Queues) -> Only one consumer per event
+	 -> Publisher-Subscriber messaging systems -> events are not intended for any consumer
+
+  
+   What is Kafka ?
+   ---------------	
+	-> Is a distributed messaging system and streaming platform.
+	   
+            1. Publish & Subscribe streams of events
+	    2. Store the records (durably) in a fault tolerent ways. 
+	    3. Process streams of records in real-time       
+
+   Kafka Basics
+   -------------
+
+     1. Zookeeeper (ZK)		
+	-> Is a distrbuted coordination service which montitors all the brokers 
+	   in a cluster
+
+     2. Broker
+	 -> Is a Kafka service running on each node in the Kafka cluster	
+	 -> Each broker in a cluster should have a unique broker-id
+	 -> Each brokers stores one or more partitions of topics
+  
+     3. Cluster
+	 -> When Kafka has more than one broker coordinated by the same ZK, then it is called
+	    a Kafka cluster.
+	 -> A Kafka cluster can be expanded without download. 
+
+     4. Topics
+	 -> Is a feed/category to which records are published by produces and can be consumed 
+            by one or more consumers. 
+         -> For every topic, Kafka maintains topic partition logs (distributed commit logs)
+	 -> All the messages are stored in a "serialized format"
+	 -> The topic messages will be retained for 7 days (168 hours)
+
+     5. Partitions
+	 -> A single can have many partitions distributed across many brokers
+	 -> A single broker can have any number of partitions
+	 -> Having lot of partitions allow Kafka to handle arbitrary amount of data.
+
+     6. Partition-offset
+	  -> Each message in a partition has a unique sequence-id called 'offset'
+
+     7. Replicas
+	  -> Backups of partition.
+	  -> Are used to prevent data loss.
+	  -> The replica-id of a partition is same as the broker-id.
+	  -> Only one replica acts as a "leader" replica
+		-> All reads (from consumers) and writes (from producers) are served only by 
+                   the leader replica	
+    8. Producers
+	  -> Publish messages to leader replicas of the topic partitions.
+	  -> Messages are published in serialized format
+	  -> A single producer can publish messages to mulitple topics
+
+    9. Consumers
+	 -> Consumers subscribe to one or more topics (or topic partitions), poll the messages
+	    and processes the messages
+	 -> A single consumer can read messages from mulitple topics	
+	
+
+
+   Getting started with Kafka
+   --------------------------
+
+     1. Make sure you are running Java 8 (jdk 1.8)
+
+     2. Download Kafka binaries from URL: https://kafka.apache.org/downloads
+
+     3. Extract the tar file to a suitable directory. Thats it!!
+
+     Important directories:
+
+	1. bin      -> contains all the shell scripts and windows batch files.
+	2. config   -> all the configuration files are located here
+	3. libs	    -> all the libraries (jar file) are located here.
+
+
+        Important PORTS:
+		-> Kafka Broker: 9092
+		-> Zookeeper:    2181
+
+   1. Start the zookeeper service
+
+	bin/zookeeper-server-start.sh config/zookeeper.properties
+
+   2. Start the Kafka broker service
+
+	bin/kafka-server-start.sh config/server.properties
+
+	Important Configurations:	
+		-> broker.id=0
+		-> listeners=PLAINTEXT://:9092
+		-> log.dirs=/tmp/kafka-logs
+
+		-> log.retention.hours=168
+		-> zookeeper.connect=localhost:2181
+
+  3. Working with Topics - Topic Operations
+	
+	List existing topics:
+		bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+	Create a topic:
+		bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic demotopic --partitions 3 --replication-factor 1
+	
+	Describe a topic:
+		bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic demotopic 
+
+   4. Start a Kafka Console Producer
+
+	  bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic demotopic 
+
+	  bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic demotopic --property "parse.key=true" --property "key.separator=:"
+
+   4. Start a Kafka Console Consumer
+	
+	bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic demotopic 
+
+	bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic demotopic --property print.key=true --property print.value=true --property key.separator=" | "
+
+
+
+   Single-Node, Multiple-Broker Configuration
+   ------------------------------------------
+
+    I am creating two additional versions on server.properties file (server1.properties & server2.properties)
+    with the following config changes..
+
+			
+  	file		    broker.id	listeners			log.dirs
+	---------------------------------------------------------------------------------
+	server1.properties	0	listeners=PLAINTEXT://:9092	/tmp/kafka-logs
+	server1.properties	1	listeners=PLAINTEXT://:9093	/tmp/kafka-logs-1
+	server2.properties	2	listeners=PLAINTEXT://:9094	/tmp/kafka-logs-2
+
+
+    Message distribution Logic
+    --------------------------
+
+	1. If the message has a partition-id specified, the message goes to that partition
+
+	2. If the message has a 'key'
+
+		2.1 If you defined a custom-partitioner, it will be applied on the key, to determine
+		    the partition to which the message goes to.
+
+		2.2 If there is no custom partitioner, the default hash partitioner is used. 
+
+        3. If the message has no key, the messages districuted to all partitions in a load balanced 
+	   manner.
+		
+
+   Consumer Groups
+   ---------------
+
+	
+
+
+
+
+
+
+
+
+
