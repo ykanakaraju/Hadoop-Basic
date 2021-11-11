@@ -1,0 +1,162 @@
+
+  Agenda (20 session * 4 hrs)
+  ---------------------------
+    -> Big Data - Concepts
+    -> Hadoop
+	 -> HDFS
+	 -> MapReduce
+	 -> YARN
+    -> Hive (Data warehousing platform)
+    -> Impala (introduction)
+    -> Sqoop (export & import tool)
+    -> HBase (NoSQL database)
+    -> Kafka (PubSub messaging engine)
+    -> NiFi (dataflow manager)
+    -> Spark ( PySpark )
+
+ ==========================================================
+    Materials:
+
+	-> Presentations (PDFs)
+	-> Code - Command sets & Programs
+        -> Class Notes
+
+        -> https://github.com/ykanakaraju/Hadoop-Basic
+ ==========================================================      
+
+    Big Data 
+    --------
+
+       Big Data is data that contains greater variety (unstructured & semu structured) arriving at
+       increasing volumes and with velocity. (3 Vs of Big Data)   
+
+	-> Volume
+		-> Amount of data. We will have to process huge volumes of low-density & 
+		   unstructured data. 
+	-> Velocity
+		-> Velocity is the fast rate at which data is received and act upon it. 
+
+	-> Variety
+ 		-> Unstructured & Semi-structured data such as text, audio, video require 
+		   additional preprocessing to derive meaning and support metatdata.
+
+
+   Computing Cluster
+   -----------------
+        -> Is a unified entity containing a group of nodes whose cumulative resources can be used
+	   to store and process huge amounts of data.	
+    
+   Hadoop
+   -------
+	-> Is an open source framework to store and process bigdata on a cluster 
+	   made of commodity hardware. 
+
+	-> Distributed Storage    : HDFS (Hadoop Distributed File System)
+	-> Distributed Processing : MapReduce
+	-> Cluster Manager	  : YARN  (added to Hadoop from Hadoop 2.0 onwards)
+
+
+   HDFS (Hadoop Distributed File System)
+   -------------------------------------
+	
+      => Distributed Storage Framework
+
+      => Data is split into blocks of 128 MB each and are distributed across many machines.
+	-> The blocks are distributed across many slave nodes
+	-> Each blocks is replicated 3 times (default) on three different node for providing fail-safety.
+
+
+      HDFS Architecture
+      -----------------
+
+	-> Name Node (NN)
+		-> Runs on the master machine
+
+		-> Maintains all the meta data in two files:
+			-> EditLog (in-memory)
+			-> FSImage (persistent file, stored on the disk)
+
+	-> Data Node (DN)
+		-> Runs on all the slave nodes.
+		-> Send heart-beats to Name node once in 3 sec.
+		    -> If three successive heartbeats are missed, then the datanode is considered as 
+		       unavailable. 
+		-> Data Nodes send block-reports to NN
+
+			-> Block Report:
+				-> Info about all the files and directories
+				-> Available Disk Space, Total disk space, reserved disk space
+
+	-> Secondary Name Node (SNN)
+		-> Responsible for check Poinitng
+
+
+        -> Balancer
+		-> Balancer maintains the replication factor of file.
+		-> Is a background process the periodically checks for under & over repicated blocks
+		   and maintains the replication.
+
+ 
+    Hadoop EcoSystem
+    ----------------
+	=> Various different components that provide different services and run on
+	   top of Hadoop make up Hadoop-Ecosystem. 
+
+		
+		Execution Engines	: Mapreduce, Spark, Tez
+		Analytical Process	: Hive, Drill, Impala
+		ML Libraries		: Spark MLlib, Mahout
+		Web Indexing & Search	: Lucene, Solr
+		Messaging Engines & Streaming : Kafka, Storm
+		Coordination Mgmt	: Zookeeper, Ambari
+		Data Ingestion		: Sqoop, Flume
+
+
+    Hadoop Distributions
+    --------------------
+
+	Distributions package lot of Hadoop Components as one unified distribution and provide
+	management tools to make managing hadoop clusters easy and convinient.
+
+	On-Premisis Clusters
+	---------------------
+	-> Cloudera 
+	-> HortonWorks (merged with Cloudera)
+	-> MapR
+
+	Cloud Services
+	--------------
+	-> Amazon's AWS EMR (Elastic Map Reduce - managed Hadoop service)
+	-> Microsoft Azure HDInsights (managed)
+	-> Google's GCP DataProc (managed)
+
+
+   Hadoop Config Files
+   --------------------
+
+	-> core-site.xml
+	-> hdfs-site.xml
+	-> mapred-site.xml
+
+
+   HDFS File Operation - Working with HDFS
+   ---------------------------------------
+
+	=> Home Directory on Linux File System : /home/cloudera	
+	=> Home directory on HDFS File System  : /user/cloudera
+
+        Commands:  hadoop fs -<command>  OR  hdfs dfs -<command> 
+	
+      
+
+
+
+
+
+
+
+
+
+
+
+
