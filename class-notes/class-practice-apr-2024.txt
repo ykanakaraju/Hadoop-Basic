@@ -1,0 +1,211 @@
+
+CREATE DATABASE ctsdb;
+CREATE SCHEMA ctsdb;
+
+--drop empty database
+DROP DATABASE ctsdb;
+
+--drop non-empty database
+DROP DATABASE ctsdb CASCADE;
+
+
+DESCRIBE DATABASE ctsdb;
+
+CREATE DATABASE ctsdb_external 
+LOCATION '/user/cloudera/hive/ctsdb.db';
+
+CREATE TABLE empinfo (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED  
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE;
+
+--loading data into Hive table
+
+LOAD DATA LOCAL INPATH '/home/cloudera/Hive/emp.txt' INTO TABLE empinfo;
+LOAD DATA INPATH '/user/cloudera/datasets/emp.txt' INTO TABLE empinfo;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/Hive/emp.txt' OVERWRITE INTO TABLE empinfo;
+LOAD DATA INPATH '/user/cloudera/datasets/emp.txt' OVERWRITE INTO TABLE empinfo;
+
+CREATE EXTERNAL TABLE empinfo_external (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED  
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/hive/empinfo_external';
+
+
+CREATE TABLE students_part
+(id INT, name STRING, mobile STRING, email STRING, project STRING)
+
+PARTITIONED BY (country STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/Hive/students_USA.txt' 
+INTO TABLE students_part
+PARTITION (country='USA');
+
+
+CREATE TABLE students_part_2
+(id INT, name STRING, mobile STRING, email STRING, project STRING)
+
+PARTITIONED BY (country STRING, branch STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/Hive/students_USA.txt' 
+INTO TABLE students_part_2
+PARTITION (country='USA', branch='CSE');
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/Hive/students_country_batch.csv' 
+INTO TABLE students_dp
+PARTITION (country='USA', branch='CSE');
+
+
+CREATE TABLE students_country_batch 
+(id int, name string, mobile string, email string, project string, country string, batch int)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/Hive/students_country_batch.csv' 
+INTO TABLE students_country_batch ;
+
+
+CREATE TABLE students_dyn_part
+(id int, name string, mobile string, email string, project string)
+PARTITIONED BY (country string, batch int)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '|'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+set hive.exec.dynamic.partition.mode=nonstrict
+
+-- append additonal files
+INSERT INTO TABLE students_dyn_part
+PARTITION (country, batch) 
+SELECT id, name, mobile, email, project, country, batch 
+FROM students_country_batch;
+
+-- overwrite existing files.
+INSERT OVERWRITE TABLE students_dyn_part
+PARTITION (country, batch) 
+SELECT id, name, mobile, email, project, country, batch 
+FROM students_country_batch;
+
+
+CREATE TABLE students_dyn_part_2
+(id int, name string, mobile string, email string, project string)
+
+PARTITIONED BY (country string, batch int);
+
+INSERT OVERWRITE TABLE students_dyn_part_2
+PARTITION (country='IN', batch) 
+SELECT id, name, mobile, email, project, batch 
+FROM students_country_batch
+WHERE country='India';
+
+-- external partitioned table
+
+CREATE EXTERNAL TABLE students_dyn_part_ext
+(id int, name string, mobile string, email string, project string)
+PARTITIONED BY (country string, batch int)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '|'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/hive/students_dyn_part_ext';
+
+
+INSERT OVERWRITE TABLE students_dyn_part_ext
+PARTITION (country, batch) 
+SELECT id, name, mobile, email, project, country, batch 
+FROM students_country_batch;
+
+
+CREATE TABLE students_bkt 
+(id int, name string, mobile string, email string, project string, country string, batch int)
+CLUSTERED BY (id) 
+INTO 4 BUCKETS
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY "\t";
+
+set hive.enforce.bucketing=true
+
+INSERT INTO TABLE students_bkt
+SELECT id, name, mobile, email, project, country, batch FROM students_country_batch;
+
+SELECT * FROM students_bkt WHERE id = 25;
+
+
+CREATE TABLE students_pb
+(id int, name string, mobile string, email string, project string, country string)
+
+PARTITIONED BY (batch int)
+CLUSTERED BY (id) 
+SORTED BY (id)
+INTO 3 BUCKETS
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t';
+
+
+INSERT OVERWRITE TABLE students_pb
+PARTITION (batch) 
+SELECT id, name, mobile, email, project, country, batch 
+FROM students_country_batch;
+
+
+SELECT * FROM students_pb TABLESAMPLE (BUCKET 1 OUT OF 2 on id)
+
+CREATE EXTERNAL TABLE students_pb_ext
+(id int, name string, mobile string, email string, project string, country string)
+PARTITIONED BY (batch int)
+CLUSTERED BY (id) 
+SORTED BY (id)
+INTO 3 BUCKETS
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+LOCATION '/user/cloudera/hive/students_pb_ext';
+
+INSERT OVERWRITE TABLE students_pb_ext
+PARTITION (batch) 
+SELECT id, name, mobile, email, project, country, batch 
+FROM students_country_batch;
+-------------------------
+CREATE TABLE students_country_batch_2 
+AS
+SELECT * FROM students_country_batch WHERE country='USA';
+
+
+CREATE TABLE students_country_batch_2 
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+AS
+SELECT * FROM students_country_batch WHERE country='USA';
+
+
+CREATE TABLE students_country_batch_3 
+STORED AS ORC
+AS
+SELECT * FROM students_country_batch WHERE country='USA';
+
+CREATE TABLE students_country_batch_2 LIKE students_country_batch;
+
+-------------------------------
+
+
+
+
+
+ 
