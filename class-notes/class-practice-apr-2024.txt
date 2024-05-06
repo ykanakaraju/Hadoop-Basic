@@ -203,6 +203,94 @@ SELECT * FROM students_country_batch WHERE country='USA';
 CREATE TABLE students_country_batch_2 LIKE students_country_batch;
 
 -------------------------------
+LOAD DATA LOCAL INPATH '/home/cloudera/hive-material/data/emp.txt' INTO TABLE empinfo;
+
+
+-- overwrite
+INSERT OVERWRITE TABLE students_country_usa
+SELECT * FROM students_country_batch WHERE country='USA'
+
+-- append
+INSERT INTO TABLE students_country_usa
+SELECT * FROM students_country_batch WHERE country='USA'
+
+--hdfs diretory
+INSERT OVERWRITE DIRECTORY '/user/cloudera/hive_data/students_country_batch'
+SELECT * FROM students_country_batch WHERE country='USA';
+
+INSERT OVERWRITE DIRECTORY '/user/cloudera/hive_data/students_country_batch'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+SELECT * FROM students_country_batch WHERE country='USA';
+
+INSERT INTO DIRECTORY '/user/cloudera/hive_data/students_country_batch'
+SELECT * FROM students_country_batch WHERE country='USA';
+
+
+--local directory
+INSERT OVERWRITE LOCAL DIRECTORY '/home/cloudera/hive_data/students_country_batch'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '|'
+SELECT * FROM students_country_batch WHERE country='USA';
+
+INSERT OVERWRITE LOCAL DIRECTORY '/home/cloudera/hive_data/students_country_batch_avro'
+STORED AS AVRO 
+SELECT * FROM students_country_batch WHERE country='USA';
+
+-- creating tables using custom formats
+CREATE TABLE empinfo_orc (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+STORED AS ORC;
+
+CREATE TABLE empinfo_parquet (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+STORED AS PARQUET;
+
+CREATE TABLE empinfo_avro (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+STORED AS AVRO;
+
+
+INSERT OVERWRITE TABLE empinfo_orc
+SELECT * FROM empinfo;
+
+
+-- multi-table insert command
+
+FROM students_country_batch
+  INSERT OVERWRITE TABLE students_usa 
+    SELECT id, name, mobile, email, project, country, batch WHERE country = 'USA'
+  INSERT OVERWRITE TABLE students_uk 
+    SELECT id, name, mobile, email, project, country, batch WHERE country = 'UK'
+  INSERT OVERWRITE TABLE students_india 
+    SELECT id, name, mobile, email, project, country, batch WHERE country = 'India';
+
+
+-- working with complex data types..
+CREATE TABLE complex_data
+(col1 array<string>,
+ col2 map<int,string>,
+ col3 struct<name:string,score:int>)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+COLLECTION ITEMS TERMINATED BY '/'
+MAP KEYS TERMINATED BY ':'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive-material/hive_complex_data' INTO TABLE complex_data;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
