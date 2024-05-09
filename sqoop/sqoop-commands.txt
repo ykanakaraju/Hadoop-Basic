@@ -1,0 +1,130 @@
+
+### help command provide specific usage instructions on a particular tool
+$sqoop help <tool-name>   ex: $sqoop help import
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Working with MySQL to interact with Sqoop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$sudo yum install mysql-server   // this command downloads and install mysql server service
+$sudo service mysqld start       // starts the mysql deamon service
+$mysql -u root                   // connect to mysql as root
+
+$create database <database-name>
+
+$grant all on <dbname>.* to '%'@'localhost';  ---Grant privileges for all users
+$grant all on <dbname>.* to ''@'localhost';  ---Grant privileges for all users
+
+NOTE: If yum gives a problem, do the following:
+$sudo su
+$vi /etc/yum.repos.d/epel.repo
+Change https to http
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Sqoop Tools - import tool
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+##---------------------------------------------------------
+### import from mysql table into HDFS
+##---------------------------------------------------------
+$sqoop import --connect jdbc:mysql://localhost:3306/empdb
+              --username root
+              --password <password>
+              --table emptable
+              -m 1
+              --target-dir /user/cloudera/empdb
+              --fields-terminated-by ','
+              --lines-terminated-by '\n'
+
+##---------------------------------------------------------
+##  selecting specific columns only 
+##---------------------------------------------------------
+sqoop import --connect jdbc:mysql://localhost/empdb
+        --username root
+	--table emp
+	--columns "empid, empname" 
+	-m 1 
+        --target-dir /user/cloudera/empdb
+
+
+##---------------------------------------------------------
+##      selecting based on a query 
+##---------------------------------------------------------
+sqoop import --connect jdbc:mysql://localhost:3306/empdb
+        --username root
+	--query “select eid,ename from emp where deptid=10 AND \$CONDITIONS" 
+	-m 1 
+	--target-dir /user/ravi/test6;
+
+
+##---------------------------------------------------------
+##  import to a sequence file 
+##---------------------------------------------------------
+sqoop import --connect jdbc:mysql://localhost:3306/test 
+             --username root
+	     --table emp_hive 
+             -m 1 
+             --as-sequencefile 
+             --target-dir emp_hive_sequence_files
+
+##---------------------------------------------------------
+##-- import table from mysql to hive 
+##---------------------------------------------------------
+sqoop import --connect jdbc:mysql://localhost:3306/test 
+             --username root       
+	     --table emp_hive 
+             	     --hive-table empinfo.test    (dbname.tablename)
+                      -m 1
+                      --hive-import             
+
+Note: we can create an avro file using the option --as-avrodatafile
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Sqoop Tools - export tool
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### -- export a table from Hive to a compatible MySQL table
+
+sqoop export --connect jdbc:mysql://localhost:3306/test 
+             --username root         
+             --table emp
+             -m 1             
+             --export-dir /user/hive/warehouse/emp      		
+             --input-fields-terminated-by '\0001'       		
+
+
+---------------------------------------------------------
+        Sqoop Tools - other tools
+---------------------------------------------------------
+
+##-- 'list-tables' : list databases in a mysql server ---
+sqoop list-databases --connect jdbc:mysql://localhost
+
+##-- 'list-tables' : list tables in a mysql database ---
+sqoop list-tables --connect jdbc:mysql://localhost:3306/empdb
+
+
+##-- 'eval' : Evaluate a SQL statement and display the results ---
+sqoop eval --connect jdbc:mysql://localhost:3306/empdb 
+           --username <username>
+           --password <password>            
+           --query 'select * from emp'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/empdb 
+           --username <username>
+           --password <password>  
+           --query 'update emp set salary=25000 where empid=100'
+
+##-- 'create-hive-table': Import a table definition into Hive ---
+##-- creates a table in hive @ /user/hive/warehouse location
+sqoop create-hive-table --connect jdbc:mysql://localhost:3306/test 
+		--username root 
+		--table emp_mysql 
+                --fields-terminated-by ','
+
+
+
+
+
