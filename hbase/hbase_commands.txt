@@ -1,0 +1,124 @@
+$hbase shell   -> run the HBase shell and launches an hbase instance
+
+##-- run a batch file -----------------------------------------------------
+$hbase shell ./sample_commands.txt
+
+##-- create an hbase table ------------------------------------------------
+
+create 'emp_hb', 'basic', 'contact', 'salary', 'skills', 'other'
+
+create 't1', {NAME => 'f1', VERSIONS => 5}   // table-name: t1, family: f1, versions to mintain: 5
+
+create 't1', {NAME => 'f1'}, {NAME => 'f2'}, {NAME => 'f3'}  // table-name: t1, families: f1, f2, f3
+
+create 't1', 'f1', 'f2', 'f3'  // same as above, a short-hand form
+
+create 't1', {NAME => 'f1', VERSIONS => 1, TTL => 2592000, BLOCKCACHE => true}
+
+##-- alter an hbase table ------------------------------------------------
+
+Note: to alter, you first need to disable the table
+
+alter 't1', NAME => 'f1', VERSIONS => 5        // alter or add a column-family
+alter 't1', NAME => 'f3', METHOD => 'delete'   // delete a column-family
+alter 't1', METHOD => 'table_att_unset', NAME => 'MAX_FILESIZE'   // remove a table-scope attribute
+
+##-- drop an hbase table ------------------------------------------------
+
+Note: to drop, you need to disable the table
+
+disable 't1'
+drop 't1'
+
+
+##-- list - list tables
+list
+
+## -- describe: describe a table -----------------------------------------
+describe 'emp_hb'
+
+##-- add data to a table to the same row with key 'r001' ------------------
+put 'emp_hb', 'r001','basic:empid','100'    // r001 is the row-id key
+put 'emp_hb', 'r001','basic:empname','Kanakaraju'
+put 'emp_hb', 'r001','basic:deptid','1'
+put 'emp_hb', 'r001','contact:email','kanakaraju@gmail.com'
+put 'emp_hb', 'r001','contact:phone','8501088770'
+
+##-- scan - scan the entire table -----------------------------------------
+scan 'emp_hb'
+scan 'emp_hb', {COLUMNS=>['basic:empname', 'basic:empid']}
+scan 't1', {COLUMNS => ['c1', 'c2'], LIMIT => 10, STARTROW => 'xyz'}
+scan 't1', {COLUMNS => 'c1', TIMERANGE => [1303668804, 1303668904]}
+
+##-- query data by row >> t1: table-name, r1: row-id, ts1,ts2: time-stamp values
+get 't1', 'r1'
+get 't1', 'r1', {TIMERANGE => [ts1, ts2]}
+get 't1', 'r1', {COLUMN => 'c1'}
+get 't1', 'r1', {COLUMN => ['c1', 'c2', 'c3']}
+get 't1', 'r1', {COLUMN => 'c1', TIMESTAMP => ts1}
+get 't1', 'r1', {COLUMN => 'c1', TIMERANGE => [ts1, ts2], VERSIONS => 4}
+get 't1', 'r1', 'c1'
+get 't1', 'r1', 'c1', 'c2'
+get 't1', 'r1', ['c1', 'c2']
+
+## -- update data ---------------------------------------------------------
+## Note: Update is same as insert with the same row-id and column-family info. 
+## The old cell will be versioned and the new data becomes the current data
+put 'emp_hb', 'r001','basic:empname','Kanakaraju Y'   // old cell value is versioned
+
+## -- delete a value -----------------------------------------
+delete 'emp_hb', 'r001', 'basic:emapname'
+
+-------------------------------------------------------------------------------
+				Hive & HBase Integration
+-------------------------------------------------------------------------------
+
+# run this from linux while launching hive shell - this adds the required jar files to the hive path for that session
+$ hive --auxpath /usr/lib/hive/lib/hive-hbase-handler-0.10.0-cdh4.7.0.jar,/usr/lib/hive/lib/hbase.jar,/usr/lib/hive/lib/zookeeper.jar,/usr/lib/hive/lib/guava-11.0.2.jar
+
+
+# run this from the hive shell
+hive> CREATE TABLE hiveempinfo(key int, empname string, salary double) 
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler' 
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,emp:empname,emp:salary") 
+TBLPROPERTIES ("hbase.table.name" = "hbaseempinfo");
+
+# load data into hive (deserialized) table just created
+hive> INSERT OVERWRITE hiveemp SELECT empid, empname FROM emp;
+
+NOTE: when you load data into the hive table the corresponding HBase table is also populated 
+with the same data. Now, you can do DML operations in HBase and see the changes reflected in Hive
+
+
+-------------------------------------------------------------------------------
+   HBASE Command List
+-------------------------------------------------------------------------------
+
+  Group name: general
+  Commands: status, table_help, version, whoami
+
+  Group name: ddl
+  Commands: alter, alter_async, alter_status, create, describe, disable, disable_all, 
+            drop, drop_all, enable, enable_all, exists, get_table, is_disabled, 
+            is_enabled, list, show_filters
+
+  Group name: dml
+  Commands: count, delete, deleteall, get, get_counter, incr, put, scan, truncate
+
+  Group name: tools
+  Commands: assign, balance_switch, balancer, close_region, compact, flush, 
+            hlog_roll, major_compact, move, split, unassign, zk_dump
+
+  Group name: replication
+  Commands: add_peer, disable_peer, enable_peer, list_peers, list_replicated_tables, 
+            remove_peer, start_replication, stop_replication
+
+  Group name: snapshot
+  Commands: clone_snapshot, delete_snapshot, list_snapshots, restore_snapshot, snapshot
+
+  Group name: security
+  Commands: grant, revoke, user_permission
+
+
+
+
