@@ -1,0 +1,1408 @@
+
+ Curriculum   (20 sessions - 80 hours)
+ -------------------------------------
+  Introduction to Big Data & Hadoop
+  HDFS
+  YARN
+  MapReduce (using Java)
+  Hive 
+  Impala - Basics
+  Sqoop  
+  HBase - Basic Operations
+  Kafka (using Java)      
+  Spark (PySpark)  
+
+
+  Training Materials
+  ------------------
+    -> PDF Presentations
+    -> Code modules, command documents, programs
+    -> Class Notes
+    -> Databricks Notebooks
+    -> GitHub: https://github.com/ykanakaraju/Hadoop-Basic
+
+
+  Pre-requisites
+  --------------
+     -> SQL
+     -> Java 
+     -> Python 
+
+
+  Big Data Introduction
+  ---------------------   
+     
+     Type of data so large and complex that your traditional data processing systems
+     can not reasonably store and process. 
+
+   Big Data scenarios
+   ------------------
+       -> The volume to be handled is very high (much higher than 1 TB)
+       -> You want to support real-time analytics (velocity)
+       -> You data is growing very fast, so that in no time your system becomes inadeqaute. 
+       -> Process unstructured, semi-structured data etc.
+    
+  Big Data Characteristics
+  ------------------------
+       -> Volume
+       -> Velocity
+       -> Variety 
+       -> Veracity (correctness of the data)
+       -> Value (extracting insights from the data)   
+    
+
+  Why your traditional systems have big data problem
+  --------------------------------------------------
+   -> Because your traditional systems ( that exists in pre-internet era ) are not designed
+      for internet scale applications.
+ 
+   -> They are designed to run on a single machine. The single machine has only limited 
+      amount of resources.
+
+
+  Scalability Options
+  -------------------
+    -> Scale up  (Vertical Scaling)   -> Migrate to a machine with higher configuration
+    -> Scala out (Horizontal Scaling) -> Use many machines instead of one. 
+                                      -> Use computing cluster
+
+   What is a Computing Cluster?
+   ----------------------------
+   A unified network of nodes (machines) whose cumulative resources can be used to store
+   or process data as if you are working with a single machine. 
+
+
+   What is a Framework ?
+   ---------------------
+    A framework is a set of libraries that implement all the basic low-level functionalities
+    that the framework is intended for. 
+
+    The users of the framework should focus on the business-logic and implement their solutions 
+    as per the guidelines provided by the framework. 
+
+
+    What is the solution to storage & processing problems associated with Big Data
+    ------------------------------------------------------------------------------
+    -> Hadoop provides a solution for big-data problems.
+
+ 
+    What is Hadoop ?
+    ----------------     
+    Hadoop is a Open Source Framework to Store and Process data in a distributed way 
+    using a cluster of commdity harware. 
+
+     -> Components of Hadoop:
+	   -> Distributed Storage Solution (HDFS)
+	   -> Distributed Processing Solution (MapReduce)
+           -> Resource Management (YARN)
+
+
+   Hadoop Distributions
+   --------------------
+	Apache Hadoop => Open source
+	
+	On-Prem & Hybrid Cloud => Cloudera & MapR
+
+	Managed Cloud Solutions 
+		-> AWS   : AWS Elastic MapReduce (EMR)
+		-> Azure : HDInsignts
+	        -> GCP   : DataProc 
+
+
+    HDFS (Hadoop Distributed File System)
+    --------------------------------------
+
+      -> Stores data in the form of "blocks" of 128 MB each
+      -> Each block is replicated on other nodes so many times as defined by a 'replication-factor'
+           (default rep-factor is 3)      
+      
+     Q1:  If I want to stote 1024 MB (1 GB) file on HDFS, how much physical storage space 
+          is required (using default configs) => 3 GB   
+
+     Q2:  If you want to store 1034 MB file, how many unique blocks are created on HDFS?
+	  -> 8 blocks of 128MB each & 1 block of 10 MB
+         
+	
+
+   Hadoop EcoSystem
+   ----------------   
+     -> Refers to a set of tools/frameworks/software that run on top of hadoop to solve
+        various big data related problems.          
+
+     -> Popular Components in Hadoop EcoSystem             
+
+          -> Resource Management Tool:     YARN
+          -> Coordination Management Tool: ZooKeeper
+          -> Execution Frameworks: MapReduce, Spark, Tez
+          -> SQL-Analytics: Impala, Drill, Hive
+	  -> Streaming Data Processing: Kafka, Storm, Spark Streaming
+	  -> Machine Learning: Mahout, Spark MLLib
+          -> Scripting: Pig
+          -> NoSQL database: HBase
+          -> Data ingestion tools: Flume, Sqoop
+
+  =======================================================================
+     HDFS (Hadoop Distributed File System)
+  =======================================================================
+
+   -> Storage Solution
+   -> Stores data as blocks of 128 MB 
+   -> Each block is replicated.
+
+   HDFS Architecture
+   -----------------
+
+   Hadoop uses Master-Slave Architecture
+
+
+   HDFS Daemons 
+   ------------
+     -> Daemon: Continuosly running background job. 
+
+     1. Name Node (NN)	
+	-> runs on the master machine (master daemon)
+        -> recieves heart-beats from DNs.
+	   -> if three successive heart-beats are missing from any DN, it is considered as 'dead'
+        -> NN maintains two "meta-data" files
+	    
+           1. FSImage
+		-> Persistent disk file
+                -> Will contain all the meta-data info from the time that the NN service is started
+                   upto the last checkpoint.
+
+	   2. EditLog
+		-> Maintained in memory (RAM)
+		-> All incrmental changes are recorded in this file.        
+
+     2. Data Node (DN)
+	-> runs on every slave machine (salve daemon)
+  	-> every DB sends heart-beats to NN once in every 3 seconds
+ 
+        -> In every heart-beat, DN sends "block-report" of that node
+           -> A 'block-report' consists of such info as storage data, which files, which blocks, 
+              rep-factors, permissions, ...        
+    
+     3. Secondary Name Node (SNN)
+          -> responsible for check-pointing process
+              -> check-pointing is a process of merging the edit-log file with fsimage file.
+
+     4. Balancer 
+	  -> Ensures that the replication-factor of the files is maintained. 
+
+          -> A file can become "under-replicated" if one nodes that contain the blocks of the file
+             goes down, or if the rep-factor of the file is increased. Then balencer creates
+             additional replicas of the blocks of that file.  
+
+	  -> A file can become "over-replicated" if one node that contain the blocks that was 
+             previously down and comes up again, or if the rep-factor of the file is decreased.
+             Then balencer removes the replicas of the blocks of that file beyond the rep-factor.   
+
+
+   HDFS High Availability
+   ----------------------
+     
+      => Availability : Means that system do not have any down-time. Always available to the client.
+    
+    
+      => Hadoop High Availability is introduced in Hadoop 2.0 onwards. 
+	   -> We have "Active NN" and "Stand-by Name Node"
+
+      => Hadoop 1.x is not high availble system.
+	   -> In Hadoop 1.x, Name Node is a 'Single Point of Failure'    
+
+
+   HDFS File Operations
+   --------------------
+
+       => HDFS is non-editable file system.
+
+       Default Paths:
+
+        * Cloudera Local Home :  /home/cloudera
+        * HDFS Home: 		 /user/cloudera
+        
+        HDFS FS Command Syntax:  $hadoop fs -<command-name> <parameters>
+                                 $hdfs dfs -<command-name> <parameters>
+
+
+
+ 	Default Paths ( cloudera is the user-name ):
+
+        * Cloudera Local Home :  /home/cloudera
+        * HDFS Home: /user/cloudera
+
+ 	Configuration Files:
+	
+	* /etc/hadoop/config/core-site.xml
+	* /etc/hadoop/config/hdfs-site.xml
+	* /etc/hadoop/config/mapred-site.xml
+
+ 	There are individual folders for each node in the cluster in directories as shown below :
+  
+        * /etc/hadoop/conf.cloudera.hdfs1
+	* /etc/hadoop/conf.cloudera.mapred1
+	* /etc/hadoop/conf.cloudera.yarn1
+
+ 	All daemon log files are written under:
+
+	* /var/log/hadoop/
+
+	
+   Common HDFS File Operations
+   ---------------------------
+
+	 * hadoop fs -help   				=> lists all the commands with a brief discription
+	 * hadoop fs -help <command-name>  
+	 * hadoop fs -chmod 755 <file/dir>
+	 * hadoop fs -chmod -R 755 <file/dir>		=> change permission for a file/directory
+	 * hadoop fs -cat <file-name>
+	 * hadoop fs -ls
+	 * hadoop fs -ls <dir-path>
+	 * hadoop fs -ls -R  <dir-path>			=> Recursive listing of files and directories
+
+	 * hadoop fs -cp <source file> <target dir>     => Copies within HDFS frpm source to target
+	 * hadoop fs -mv <source file> <target dir>     => Moves within HDFS frpm source to target
+	 * hadoop fs -rm -r <file-name/directory-name>
+		 
+	 // copy from Linux to HDFS
+	 * hadoop -copyFromLocal <local file path>  <hdfs file path> 
+	 * hadoop -put <local file path>  <hdfs file path> 
+
+	 // copy from HDFS to Linux
+	 * hadoop -copyToLocal <hdfs file path> <local file path>   
+	 * hadoop -get <hdfs file path> <local file path>   
+
+	 * hadoop -moveFromLocal <local file path>  <hdfs file path> 
+	 * hadoop -moveToLocal <hdfs file path> <local file path> 
+
+
+  More Commands
+  -------------
+
+ 	 * du - disk usage  
+		  
+			ex:  hadoop fs -du /user/cloudera
+
+
+	 * du -s :   Like -du, but prints a summary of disk usage of all files/directories in the path
+
+			ex: hadoop fs -du -s /user/cloudera
+
+	 * df : Shows the capacity, free and used space of the filesystem
+			 -h  Formats the sizes of files in a human-readable fashion.
+
+			ex: hadoop fs -df -h /user/cloudera/
+				hadoop fs -df /user/cloudera/
+
+	 * getmerge <src> <localDest>    :  Retrieves all files that match the path src in HDFS,
+					and copies them to a single, merged file in the local 										file system identified by localDest. 
+
+			ex: hadoop fs -getmerge test/*.txt test1/merged.txt
+
+	 * Get the replication factor of a file:
+
+			ex: hadoop fs -stat %r test/empinfo.txt
+
+	 * Set the replication factor of a file while copying or moving from linux
+
+			ex: hadoop fs -D dfs.replication=5 -copyFromLocal <source> <destination>
+	  
+				hadoop fs -D dfs.replication=5 -copyFromLocal datasets/empinfo.txt test2
+				hadoop fs -stat %r test2/empinfo.txt
+
+	 * Set the replication factor for an existing file:  -setrep [-R] [-w] <rep-factor> <path>
+		   
+			ex: hadoop fs -setrep 2 test2/empinfo.txt   => sets the rep-factor of the file to 2
+			hadoop fs -stat %r test2/empinfo.txt    => test the rep-factor of the file
+
+	 * appendToFile
+
+		Usage: hdfs dfs -appendToFile <localsrc> ... <dst>
+
+		Append single src, or multiple srcs from local file system to the destination file system. 
+		Also reads input from stdin and appends to destination file system.
+
+		hdfs dfs -appendToFile localfile /user/hadoop/hadoopfile
+		hdfs dfs -appendToFile localfile1 localfile2 /user/hadoop/hadoopfile
+		hdfs dfs -appendToFile localfile hdfs://nn.example.com/hadoop/hadoopfile
+		hdfs dfs -appendToFile - hdfs://nn.example.com/hadoop/hadoopfile Reads the input from stdin.
+
+
+	 * chmod, chgrp, chown  => Change the permissions of files.
+
+ ==========
+    YARN
+ ==========
+
+   -> Resource Manager
+
+   -> Hadoop 1.0,  MapReduce used to handle resource-management
+       -> MR was the only execution process.
+
+   -> Hadoop 2.0
+	->  Resource Management:  YARN  (Yet another resource negotiator)
+        ->  Execution: MapReduce
+
+        -> Allowed hadoop to support other execution frameworks as-well
+
+      
+   YARN Processing Components
+   --------------------------
+       1. Resource Manager (daemon)  -> one per cluster, runs in a master node
+       2. Node Manager (daemon)	     -> one per node, runs in all slave nodes
+       3. Application Master         -> one per application, can run in any NN
+       4. Set of Containers          -> Allocated to AM where tasks are executed
+
+	
+
+  ==========================================================
+     MapReduce
+  ==========================================================
+
+   -> Distributed Processing Framework.
+
+    
+   Two facets of MapReduce
+   ------------------------
+
+    1. MapReduce execution flow (framework process)
+	-> How an mR program is executed (what the system does)
+
+	1. Map Phase (developer)  
+        2. Combiner
+	3. Shuffle & Sort Phase (framework)
+        4. Partitioner
+	5. Reduce Phase (developer)
+
+
+    2. MapReduce Programming Structure
+	-> How to write MR programs (what developers should do)
+
+	-> An MR Application can have several programs (upto 5 different programs)
+   		1. Driver Program 
+		       -> master process where configuration details are specified.
+		2. Mapper
+			-> Logic defined by the developer
+			-> has map() method that run once for every input record
+		3. Reducer
+			-> Logic defined by the developer
+			-> has reduce() method that run once for every input record
+		4. Combiner
+			-> Like a mini-reducer logic applied to the output of each mapper
+                        -> Will reduce the amount of data shuffled and improves performance
+                        -> Operation has to be commutative.  
+		5. Partitioner
+			-> Allows the developer to control which keys  goes to which partition
+                           based on his own custom implementation.
+   
+   
+   MapReduce Framework Classes
+   ---------------------------
+
+   1. InputFormat -> It will identify 'records' from the blocks
+
+   2. InputSplit -> Creates input-split
+                    An input-split will have integral number of records.
+                    Each input-split can span multiple-blocks.
+
+   3. RecordReader -> Will read input-splits and create (K,V) pairs from the records
+                     Call map() method in a mapper with each record.
+
+
+
+    MapReduce DataTypes
+    -------------------
+    -> MR data-types are optimized for serialization & deserialization.
+    -> All MR class uses MapReduce Custom Data Types
+    
+      Java                MapReduce
+      ----                ---------
+      String		  Text
+      Integer		  IntWritable
+      Long		  LongWritable
+      Boolean		  BoolWritable
+      Null		  NullWritable
+
+
+    Wordcount Program
+    -----------------
+    Find the word frequency count of all the words in a given text file.
+   
+
+    Input-Split
+    ------------
+InputSplit                          RecordReader			     Mapper -> map(k, v, context) 			    Shuffle & Sort			      Reduce														Shuffle & Sort  			Reduce      
+
+hadoop spark scala flatmap    	-> (1, "hadoop spark scala flatmap")   	    (hadoop, 1) (spark, 1) (scala, 1) (flatmap, 1)   ===>   (hadoop, [1,1,1,1])    		   => (hadoop, 4)                                  
+map groupby spark spark		-> (27, "map groupby spark spark")          (map, 1) (groupby, 1) (spark, 1) (spark, 1)       	    (spark, [1,1,1,1,1,1,1,1,1,1,1,1])        (spark, 12)
+hadoop spark scala flatmap 	-> (50, "hadoop scala flume oozie")	    (hadoop, 1) (spark, 1) (scala, 1) (flatmap, 1)          (flatmap, [1,1,1,1)                       (flatmap, 4)
+map groupby spark spark		-> (74, "sqoop hive hive spark spark")      (map, 1) (groupby, 1) (spark, 1) (spark, 1)		    (scala, [1,1,1,1,1,1])		      (scala, 6)
+hadoop spark scala flatmap	-> (102, "mapreduce hadoop hive hadoop")    (hadoop, 1) (spark, 1) (scala, 1) (flatmap, 1) 
+map groupby spark spark		-> (135, "hdfs flatmap rdd scala")          (map, 1) (groupby, 1) (spark, 1) (spark, 1) 
+hadoop spark scala flatmap 	-> (168, "spark scala transformations")     (hadoop, 1) (spark, 1) (scala, 1) (flatmap, 1)
+map groupby spark spark		-> (197, "actions rdd rdd rdd rdd")         (map, 1) (groupby, 1) (spark, 1) (spark, 1)
+
+      
+     mapper   																															  
+     -------
+     input => key type: LongWritable     output =>   key type: Text 
+	      value type: Text                       value type: LongWritable
+
+
+     reducer 																															  
+     -------
+     input => key type: Text            output =>      key type:  Text
+	      value type: LongWritable                 value type: LongWritable
+
+   
+   Submitting MR program to the cluster
+   ------------------------------------
+
+    $hadoop jar <jar-file-path> <driver-class-qualified-name> <commad-line-args>
+    $yarn jar <jar-file-path> <driver-class-qualified-name> <commad-line-args>
+   
+    $hadoop jar /home/cloudera/mrpractice.jar com.sample.WordCountJob <input-file-path> <output-dir>
+    
+ 
+    MapReduce Life Cycle Methods
+    ----------------------------
+
+
+	Mapper Life Cycle methods
+	--------------------------
+
+	1. setup	-> Called once at the beginning of the MR process before the map() method
+                           is called.
+			-> Write initialization code.			
+			  
+	2. map		-> Executed once for every record in the input-split
+			-> Write the logic that you want to apply on the record.
+
+	3. cleanup	-> Called once after the map() method is completed for all records.
+			-> Release your resource and other cleanup.
+
+	4. run 		-> Generally not overridden
+                        -> Can use this to change the execution flow.
+
+
+	Reducer Life Cycle methods
+	---------------------------
+
+	1. setup	-> Called once at the beginning of the MR process before the reduce() method
+                           is called.
+			-> Write initialization code.			
+			  
+	2. reduce       -> Executed once for every record in the input-split
+			-> Write the logic that you want to apply on the record.
+
+	3. cleanup	-> Called once after the reduce() method is completed for all records.
+			-> Release your resource and other cleanup.
+
+	4. run 		-> Generally not overridden
+                        -> Can use this to change the execution flow.
+   
+  
+  Required external jars to add to MR project 
+  -------------------------------------------
+ 
+   1. Create a Java Project
+	File -> New -> Java Project
+
+   2. Right-click on the project 
+	-> Build Path -> Configure Buid Path -> Libraries -> Add External JARS
+	
+	Add the following jar files   
+   	-> /usr/lib/hadoop/hadoop-common.jar
+   	-> /usr/lib/hadoop-0.20-mapreduce/hadoop-core-mr1.jar
+
+   3. Build the Java Project
+
+	Right-click on the project 
+	-> Export -> Java -> Jar File -> Give a name and Finish
+
+
+ ====================
+    Hive
+ ====================
+
+    Hive is Hadoop's Data Warehousing Framework.
+    
+    Hive is an SQL wrapper on top of map-reduce. So that user can directly work with SQL without
+    having to write MR programs. HIve Server can create the MR programs and run them on the cluster
+    releaving the analysts from writing MR programs.
+
+    => Hive is NOT an RDBMS. 
+    => Hive is NOT a NoSQL database
+
+    Hive provides use a dialect of SQL called "Hive Query Language" (HQL, HiveQL)
+
+
+    Hive Components
+    ----------------
+  
+    1. Hive Warehouse - An HDFS directory where hive stores all its data files of all its managed tables.
+                        In cloudera:  /user/hive/warehouse
+
+    2. Hive MetaStore - MetaStore is typically an RDBMS where hive stores its metadata
+                        (Most popular option in production systems is MySQL)
+                        -> Hive comes with an embedded metastore database called "derby"
+        -> WareHouse  : DATA
+	-> Meta Store : METADATA
+
+    3. Hive Server   - Responsible for executing HQL statements (and creating MR programs if required)
+
+
+
+    How to Access Hive ?
+    --------------------
+
+    1. Command Line Interface (CLI Shells)
+	-> hive shell  
+		-> Local hive installations with default user.
+		-> Less secure
+
+        -> beeline shell (preferred for security reasons)
+		-> Connects to Hive using JDBC connection with a specific user credential
+                -> More secure.
+
+    2. HUE (Hadoop User Environment)
+         -> Provides a Web UI to interact with various Hadoop tools.
+
+    3. Client Applications  ( JDBC, ODBC, Thrift )
+
+
+   Hive File Structure 
+   -------------------
+   
+    Hive Warehouse:  /user/hive/warehouse
+
+    ->  Hive created separate directories for each database in the Hive warehouse
+        (exception: no separate directory for 'default' database)
+
+    -> For every table in the database, a separate directory is created.
+       All the data files of that table are saved in that directory.
+
+       ex: db1.emp   ==> /user/hive/warehouse/db1.db/emp
+	   db1.emp2  ==> /user/hive/warehouse/db1.db/emp2
+
+
+
+   To display current database
+   ---------------------------
+ 	set hive.cli.print.current.db=true;   -> To show db name
+
+
+   Defaults
+   --------
+        -> default serde: DELIMITED
+        -> default storage format : TEXTFILE
+        -> default line terminator: \n
+        -> default field terminator: Ctrl-A  ( \0001 )           
+
+   Describe
+   ---------
+        -> desc empinfo
+	-> desc extended empinfo
+	-> desc formatted empinfo    
+
+
+--------------------------------------------------------------------
+		  CREATE TABLE  & CTAS Construct
+--------------------------------------------------------------------
+--- Managed table ---
+CREATE TABLE empinfo (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+--- External table ---
+CREATE EXTERNAL TABLE empexternal(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/emp_external';
+
+--------------------------------------------------------------------
+		DATA LOADING 
+--------------------------------------------------------------------
+
+--append data
+LOAD DATA LOCAL INPATH '<local linux file path>' INTO TABLE <table name>
+LOAD DATA INPATH '<hdfs file path>' INTO TABLE <table name>
+
+-- overwrite data
+LOAD DATA LOCAL INPATH '<local linux file path>' OVERWRITE INTO TABLE <table name>
+LOAD DATA INPATH '<hdfs file path>' OVERWRITE INTO TABLE <table name>
+
+--loading data into external table --
+LOAD DATA LOCAL INPATH '<local linux file path>' INTO TABLE <table name>
+
+
+
+    Hive follows Scehma on Read
+    ---------------------------
+    -> Hive do not control what data goes into the table. 
+    -> Schema validation does not happen while "loading" data into the table.
+    -> Scahema validation happens while reading the data.
+       -> If the data can not be parsed as per schema, Hive shows NULL for that field.
+
+
+    Managed Tables
+    --------------
+        -> Managed tables are managed by Hive and are stored in Hive warehouse directory.
+        -> When you drop a managed table, Hive drops the schema as well as the data files. 
+
+    
+    External Tables
+    ---------------
+        -> External tables are not managed by Hive.
+        -> The data files of external table are not stored in Hive warehouse. 
+        -> They are stored in an external location specified while creating the table.
+        -> The data loaded into external table either from hive or from any other application/tool
+           is not owned/managed by Hive.
+        -> When we drop the table, ONLY schema is dropped. The data files are NOT DROPPED.
+  
+
+    Use Cases for External tables
+    -----------------------------
+
+       -> External tables are used when multiple hive databases are using the same data. 
+       -> You can create an external table pointing to existing data, analyze that data and drop the
+          table without affecting the actual data.
+
+
+
+
+    Partitioned Tables
+    ------------------
+
+     In Hive, Partitions provide a way of dividing a table into coarse-grained 
+     parts based on the value of a partition column, such as a date or country.
+
+
+     Partitioning allows us to create tables partitioned by one or more columns.
+     
+     Each unique value of the partitioned column will have its own directory 
+     within the table's directory.
+
+     Based on the way we load data into the tables we can have static & dynamic partitions
+
+     -> Partition columns should reasonably low-cardinality columns (such as year, country, month, ...)
+
+
+     Static Partitioning
+     -------------------
+	-> The data files are loaded by the user using "LOAD DATA .." command
+        -> The user has to know precisly to which partition he is loading the file.
+
+
+     Dynamic Partitioning
+     --------------------
+	-> We dynamic partitioning when the user do not know to which partition the data goes to.
+           This may be because the partition info itself is there in the data or may be we have
+           data of many partitions in the same file. 
+
+        -> We can not use "LOAD DATA.." command to load the data into the partitioned table
+
+        -> We have to load the data using dynamic partitioning scheme from a base table using
+           "INSERT .. SELECT .." command. 
+
+        -> Data files are created dynamically by hive (hense the name dynamic partitioning)
+
+        -> set hive.exec.dynamic.partition.mode=nonstrict
+
+
+
+CREATE TABLE students_part (id INT, name STRING, phone STRING, email STRING, project STRING)
+PARTITIONED BY (country STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE;
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/Hive/students_IN.txt' INTO TABLE students_part
+
+PARTITION (country='India');
+
+
+CREATE TABLE students_dynamic_part (id INT, name STRING, phone STRING, email STRING, project STRING)
+PARTITIONED BY (country STRING, batch INT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE;
+
+
+// Base Table
+CREATE TABLE students (id INT, name STRING, phone STRING, email STRING, project STRING, country STRING, batch INT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE;
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/Hive/students_country_batch.csv' INTO TABLE students;
+
+
+// Loading Data using Dynamic Partitioning
+
+INSERT INTO students_dynamic_part
+PARTITION (country, batch)
+SELECT id, name, phone, email, project, country, batch FROM students;
+
+INSERT INTO students_dynamic_part
+PARTITION (country='India', batch)
+SELECT id, name, phone, email, project, batch FROM students
+WHERE country = 'India';
+
+INSERT INTO students_dynamic_part
+PARTITION (country='Japan', batch=100)
+SELECT id, name, phone, email, project FROM students
+WHERE country = 'USA' and batch=1;
+
+-- external partitioned table
+
+CREATE EXTERNAL TABLE students_dyn_part_ext
+(id int, name string, mobile string, email string, project string)
+PARTITIONED BY (country string, batch int)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '|'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/hive/students_dyn_part_ext';
+
+
+INSERT OVERWRITE TABLE students_dyn_part_ext
+PARTITION (country, batch) 
+SELECT id, name, mobile, email, project, country, batch 
+FROM students_country_batch;
+
+----------------
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive-material/data/emp.txt' INTO TABLE empinfo;
+
+
+-- overwrite
+INSERT OVERWRITE TABLE students_country_usa
+SELECT * FROM students_country_batch WHERE country='USA'
+
+-- append
+INSERT INTO TABLE students_country_usa
+SELECT * FROM students_country_batch WHERE country='USA'
+
+--hdfs diretory
+INSERT OVERWRITE DIRECTORY '/user/cloudera/hive_data/students_country_batch'
+SELECT * FROM students_country_batch WHERE country='USA';
+
+INSERT OVERWRITE DIRECTORY '/user/cloudera/hive_data/students_country_batch'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+SELECT * FROM students_country_batch WHERE country='USA';
+
+INSERT INTO DIRECTORY '/user/cloudera/hive_data/students_country_batch'
+SELECT * FROM students_country_batch WHERE country='USA';
+
+
+--local directory
+INSERT OVERWRITE LOCAL DIRECTORY '/home/cloudera/hive_data/students_country_batch'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '|'
+SELECT * FROM students_country_batch WHERE country='USA';
+
+INSERT OVERWRITE LOCAL DIRECTORY '/home/cloudera/hive_data/students_country_batch_avro'
+STORED AS AVRO 
+SELECT * FROM students_country_batch WHERE country='USA';
+
+-- creating tables using custom formats
+CREATE TABLE empinfo_orc (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+STORED AS ORC;
+
+CREATE TABLE empinfo_parquet (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+STORED AS PARQUET;
+
+CREATE TABLE empinfo_avro (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT)
+STORED AS AVRO;
+
+
+INSERT OVERWRITE TABLE empinfo_orc
+SELECT * FROM empinfo;
+
+
+Working with different file formats
+====================================================
+
+     ORC & Parquet   ==> Columnar File Formats 
+                       -> Store all column information together at one physical location.
+                       -> This improves performance of aggrgations
+                       -> As aggregations are heavily used in analytical warkloads, these formats are very
+                          efficient in data-warehouseing like use-cases.
+
+                   => Very good read performance
+                   => moderatly good write performance
+                   => Splittable
+		   => Compressable
+
+
+     Avro  => Is used where we need schema evolution. 
+                 -> The data schema is embedded in the file itself.
+
+     Sequence => Stores data in the form of (K, V) pairs.
+
+
+SEQUENCE FILE
+=============
+
+CREATE TABLE empinfo_seq (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+STORED AS SEQUENCEFILE;
+
+INSERT OVERWRITE LOCAL DIRECTORY '/home/cloudera/hive_data/empinfo_seq'
+STORED AS SEQUENCEFILE 
+SELECT * FROM empinfo;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive_data/empinfo_seq/000000_0' OVERWRITE INTO TABLE empinfo_seq;
+
+INSERT OVERWRITE TABLE empinfo_seq SELECT * FROM empinfo;
+
+
+ORC FILE
+========
+
+CREATE TABLE empinfo_orc (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+STORED AS ORC;
+
+INSERT OVERWRITE LOCAL DIRECTORY '/home/cloudera/hive_data/empinfo_orc'
+STORED AS ORC 
+SELECT * FROM empinfo;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive_data/empinfo_orc/000000_0' OVERWRITE INTO TABLE empinfo_orc;
+
+INSERT OVERWRITE TABLE empinfo_orc SELECT * FROM empinfo;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/Hive/emp.txt' OVERWRITE INTO TABLE empinfo_orc;
+--> The above command leads to IOException.
+
+PARQUET   
+=======
+
+CREATE TABLE empinfo_parquet (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+STORED AS PARQUET;
+
+INSERT OVERWRITE TABLE empinfo_parquet SELECT * FROM empinfo;
+
+AVRO
+====
+
+CREATE TABLE empinfo_avro (empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+STORED AS AVRO;
+
+INSERT OVERWRITE TABLE empinfo_avro SELECT * FROM empinfo;
+
+
+
+
+-- multi-table insert command
+
+FROM students_country_batch
+  INSERT OVERWRITE TABLE students_usa 
+    SELECT id, name, mobile, email, project, country, batch WHERE country = 'USA'
+  INSERT OVERWRITE TABLE students_uk 
+    SELECT id, name, mobile, email, project, country, batch WHERE country = 'UK'
+  INSERT OVERWRITE TABLE students_india 
+    SELECT id, name, mobile, email, project, country, batch WHERE country = 'India';
+
+
+-- working with complex data types..
+CREATE TABLE complex_data
+(col1 array<string>,
+ col2 map<int,string>,
+ col3 struct<name:string,score:int>)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+COLLECTION ITEMS TERMINATED BY '/'
+MAP KEYS TERMINATED BY ':'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE;
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive-material/hive_complex_data' INTO TABLE complex_data;
+
+
+
+
+  Joins
+  -----
+
+   Hive supports the following joins:
+
+	-> inner join
+	-> outer joins (left outer, right outer, full outer)
+        -> left semi join
+
+
+   Left Semi Join:
+   ---------------
+	-> The data fetched only from left side table for the keys that are there in the joined table.
+        -> Very much like inner join, except that the data comes only from left side table.
+
+         -> Left Semi Join is an alias of the following query.
+	
+		=> select * from emp where deptid in (select deptid from dept)
+                => select * from emp left semi join dept on (emp.deptid = dept.deptid);
+
+            (both the above queries are functionally same)
+
+
+   Map-side Joins
+   --------------
+       -> map-joins are very efficient and aviods the reduce phase completed.
+       -> The join is performed at the map-phase itself. 
+
+        Conditions for performing map-join automatically:
+
+	    -> set hive.auto.convert.join = true   (defaul is true)
+            -> All the tables except one must be 'small table'. 
+		 -> Small table is defined by the following parameter:
+                      hive.mapjoin.smalltable.filesize (default: 25MB)
+
+       If both the tables that are joined are big tables (> hive.mapjoin.smalltable.filesize), then
+       hive does not perform map-join.
+ 
+          -> In this case, developers have to apply optimizations to improve join efficiency.
+
+        1. Bucket Map Join	
+              -> Both the tables that are joined must be bucketted on the join column
+              -> The number of buckets of one table should be a multiple of other.
+              -> Set the following config setting: 
+			set hive.enforce.bucketing = true; 
+			set hive.optimize.bucketmapjoin = true;
+
+        2. Sort Merge Join 
+	      -> Both the tables that are joined must be bucketted on the join column
+              -> The number of buckets of both tables must be same
+              -> Set the following config setting: 
+			set hive.input.format=org.apache.hadoop.hive.ql.io.BucketizedHiveInputFormat;
+			set hive.optimize.bucketmapjoin = true;
+			set hive.optimize.bucketmapjoin.sortedmerge = true;
+
+
+
+CREATE TABLE IF NOT EXISTS stocks 
+(stock_exchange STRING, symbol STRING, trxn_date DATE, open DOUBLE, 
+high DOUBLE,low DOUBLE, close DOUBLE, volumn INT, adj_close DOUBLE)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive-material/data/stocks' 
+OVERWRITE INTO TABLE stocks; 
+
+
+CREATE TABLE IF NOT EXISTS dividends 
+(stock_exchange STRING, symbol STRING, trxn_date DATE, dividend DOUBLE)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE;
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/hive-material/data/dividends' 
+OVERWRITE INTO TABLE dividends; 
+
+
+=================================================
+   JOINS & STREAMING JOINS
+=================================================
+
+ ------------------------------------------------
+ -- regular join
+ ------------------------------------------------
+ SELECT s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM stocks s JOIN dividends d
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol; 
+
+ ------------------------------------------------
+ -- regular join with better placement of tables
+ ------------------------------------------------
+ SELECT s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM dividends d JOIN stocks s
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+
+ ------------------------------------------------
+ -- stream join hint (stream a table to reducer)
+ ------------------------------------------------
+ SELECT /*+ STREAMTABLE(s) */
+ s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM stocks s JOIN dividends d
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+ 
+
+=================================================
+  Map Joins
+=================================================
+
+ ------------------------------------------------
+ -- map join hint
+ ------------------------------------------------
+ SELECT /*+ MAPJOIN(d) */
+ s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM stocks s JOIN dividends d
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+
+ ------------------------------------------------
+ --property to be set (default is true anyway)
+ ------------------------------------------------
+ set hive.auto.convert.join=true
+
+ set hive.mapjoin.smalltable.filesize = 25000000
+
+ SELECT s.trxn_date, s.symbol, s.adj_close, d.dividend
+ FROM stocks s JOIN dividends d
+ ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol; 
+
+=================================================
+  Bucket Map Joins
+=================================================
+
+CREATE TABLE IF NOT EXISTS stocks_bkt_8 
+(stock_exchange STRING, symbol STRING, trxn_date DATE, open DOUBLE, 
+high DOUBLE,low DOUBLE, close DOUBLE, volumn INT,adj_close DOUBLE)
+CLUSTERED BY (trxn_date, symbol) INTO 8 BUCKETS 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+CREATE TABLE IF NOT EXISTS dividends_bkt_4 
+(stock_exchange STRING, symbol STRING, trxn_date DATE, dividend DOUBLE)
+CLUSTERED BY (trxn_date, symbol) INTO 4 BUCKETS 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+set hive.enforce.bucketing = true; 
+set hive.optimize.bucketmapjoin = true;
+
+
+INSERT INTO stocks_bkt_8 SELECT * FROM stocks SORT BY trxn_date, symbol;
+
+INSERT INTO dividends_bkt_4 SELECT * FROM dividends SORT BY trxn_date, symbol;
+
+SELECT /*+ MAPJOIN(dividends_bkt_4) */ s.trxn_date, s.symbol, s.adj_close, d.dividend
+FROM stocks_bkt_8 s JOIN dividends_bkt_4 d
+ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+
+=================================================
+  Sort Merge Joins
+=================================================
+
+CREATE TABLE IF NOT EXISTS stocks_bkt_4
+(stock_exchange STRING, symbol STRING, trxn_date DATE, open DOUBLE, 
+high DOUBLE,low DOUBLE, close DOUBLE, volumn INT,adj_close DOUBLE)
+CLUSTERED BY (trxn_date, symbol) INTO 4 BUCKETS 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+INSERT INTO stocks_bkt_4 SELECT * FROM stocks SORT BY trxn_date, symbol;
+
+set hive.auto.convert.sortmerge.join=true;
+set hive.input.format=org.apache.hadoop.hive.ql.io.BucketizedHiveInputFormat;
+set hive.optimize.bucketmapjoin = true;
+set hive.optimize.bucketmapjoin.sortedmerge = true;
+set hive.auto.convert.sortmerge.join.nonconditionaltask=true;
+
+SELECT /*+ MAPJOIN(dividends_bkt_4) */ s.trxn_date, s.symbol, s.adj_close, d.dividend
+FROM stocks_bkt_4 s JOIN dividends_bkt_4 d
+ON s.trxn_date = d.trxn_date AND s.symbol = d.symbol;
+
+
+Immutable Tables & Transaction Tables
+-------------------------------------
+  
+ Immutable Tables
+ ----------------
+
+   -> Protect you from accedentally appending data to a non-empty table using INSERT INTO
+      command.
+   -> It won't protect from "LOAD DATA ..." command.
+   -> The behavior of INSERT OVERWRITE is not affected by the "immutable" table property.
+
+CREATE TABLE emp_immutable
+(empid INT, empname STRING, salary DOUBLE, deptid SMALLINT) 
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n' 
+STORED AS TEXTFILE 
+TBLPROPERTIES ("immutable"="true")
+
+INSERT INTO TABLE emp_immutable SELECT * FROM empinfo where empid = 101;
+INSERT INTO TABLE emp_immutable SELECT * FROM empinfo where empid = 102;   // error
+INSERT OVERWRITE TABLE emp_immutable SELECT * FROM empinfo where empid = 101;
+LOAD DATA LOCAL INPATH '/home/cloudera/hive/Hive/emp.txt' INTO TABLE emp_immutable;
+
+
+ Transactional Tables
+ --------------------
+
+    -> Transactional tables allow updates and deletes
+    -> Provides full ACID support. 
+
+    Conditions to create transactional tables
+   
+     -> make the "transactional" table property as "true"
+     -> table must be a bucketted table
+     -> storage format should be "ORC"
+     -> set some configuration options.  
+	
+ 	  set hive.support.concurrency = true;
+	  set hive.enforce.bucketing = true;
+	  set hive.exec.dynamic.partition.mode = nonstrict;
+	  set hive.txn.manager = org.apache.hadoop.hive.ql.lockmgr.DbTxnManager;
+	  set hive.compactor.initiator.on = true;
+	  set hive.compactor.worker.threads = 1;
+
+CREATE TABLE college(clg_id int,clg_name string,clg_loc string) 
+CLUSTERED BY (clg_id) INTO 5 buckets 
+STORED AS ORC
+TBLPROPERTIES('transactional'='true');
+
+INSERT INTO TABLE college values(1,'nec','nlr'),(2,'vit','vlr'),(3,'srm','chen'),(4,'lpu','del'),(5,'stanford','uk'),(6,'JNTUA','atp'),(7,'cambridge','us');
+ 
+UPDATE college set clg_id = 8 where clg_id = 7;
+UPDATE college set clg_name = 'IIT' where clg_id = 6;
+DELETE FROM college WHERE clg_id=5;
+
+
+----- Alter--
+-- rename a table ---
+ALTER TABLE empinfo RENAME TO employee;
+
+--renaming a partition --
+ALTER TABLE students_part_batch PARTITION (batch=1) RENAME TO PARTITION (batch=10);
+
+-- add a column to an existing table --- 
+ALTER TABLE employee ADD COLUMNS (email STRING, facebook STRING);
+
+-- add a new partition to a partioned table ---
+ALTER TABLE emp ADD PARTITION (country='CN') LOCATION '<directory-path>';
+
+-- change a column name and type ---
+ALTER TABLE employee CHANGE empname ename STRING;
+ALTER TABLE employee CHANGE ename empname STRING AFTER salary;
+
+-- alter table location / partition location --
+ALTER TABLE emp SET LOCATION '<directory-path>';
+ALTER TABLE emp PARTITION (country = 'IN') SET LOCATION '<directory-path>';
+
+
+===========================
+   Impala
+===========================
+
+   -> General purpose SQL engine developed by Cloudera. 
+	-> Works for both analytical and transactional loads (interactive queries)
+        -> Supports queries that take milliseconds upto hours.
+
+   -> Real time query processing engine for Hadoop
+        -> Uses its own processing engine called "Massive Parallel Parocessing (MPP)" database engine.
+
+   -> Runs directly on top of HDFS
+	-> Does not use MR
+	-> Reads widely used hadoop formats (ORC, Parquet, SequenceFile, Text, AVRO)
+	-> Can co-exist with Hadoop cluster 
+
+    -> High Peformance
+	-> Written in C++ mostly (some Java)
+        -> Used run-time code generation
+	-> completly new execution engine.
+
+    -> Impala uses:
+	 -> The same metastore as Hive.
+	 -> Uses the same SQL (Hive Query Language)
+	 -> Uses the hive warehouse to store its tables.
+       
+
+   Meta Data and Table Data in Impala
+   -----------------------------------
+    => Whenever hive metadata changes outside of impala (may be by hive) that metadata is not automatically
+       refreshed in Impala Catalog.
+          -> Impala maintains a catalog where it caches all the metadata.
+       => To refresh impala catalog use the following command:
+	   -> "INVALIDATE METADATA"
+
+    => Whenever new data is added to a table outside of impala, we have to run the following command
+       to refresh the table in impala:
+	   -> REFRESH <table-name>
+
+
+   Impala Daemons & Impala Architecture
+   ------------------------------------
+
+    1. impalad
+	-> runs on every node on the impala cluster
+	-> accepts client requests / queries
+        -> performs planning, coordination and execution of the client queries
+        -> distributes the query execution across many nodes and coordinates them
+        -> sends the results back to client.
+
+         Three Processes:
+		-> Query Planner
+		-> Query Coordinator
+		-> Query Executors (distributed across many nodes)
+
+    2. statestored
+        -> Runs on only one node in cluster
+	-> All the impalad nodes communicate with statestored continuosly
+        -> if any node is down, then that info is communicated to all the impala nodes
+
+    3. catalogd
+	-> Maintains the metadata
+	-> Any changes to the metadata are relayed to all impalad nodes
+	-> If metadata changes happen outside of the impala cluster (for ex by hive), those
+           changes have to refreshed using "invalidate metadata" command. 
+
+
+ ======================
+   Sqoop
+ ======================
+  -> Sqoop   => SQL on Hadoop  -> (SQl hadOOP)
+
+  -> Structured Data Ingestion Tool
+  -> Built on top of MapReduce.
+
+  -> Using Sqoop, you can import data from external SQL datastores (RDBMS) to Hadoop native data stores (HDFS, Hive, HBase). 
+
+  -> Sqoop launches multiple map-only tasks on the cluster to efficiently and parallely transfer bulk data between RDBMS and Hadoop systems. 
+
+
+
+sqoop list-databases --connect jdbc:mysql://localhost:3306 --username root -password cloudera
+
+sqoop list-tables --connect jdbc:mysql://localhost:3306/retail_db --username root -password cloudera
+
+====================
+  import
+====================
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root --password cloudera --table categories -m 1 --target-dir /user/cloudera/sqoop/retail_db/categories --fields-terminated-by ',' --lines-terminated-by '\n'
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root --password cloudera --table customers -m 1 --target-dir /user/cloudera/sqoop/retail_db/customers  --fields-terminated-by '\t' --delete-target-dir
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root --password cloudera --table customers -m 1 --target-dir /user/cloudera/sqoop/retail_db/customers3  --fields-terminated-by '\t' --enclosed-by '"'
+
+
+-- overwrite mode (delete mode)
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root --password cloudera --table categories -m 1 --target-dir /user/cloudera/sqoop/retail_db/categories --fields-terminated-by ',' --lines-terminated-by '\n' --delete-target-dir
+
+-- append mode
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root --password cloudera --table categories -m 1 --target-dir /user/cloudera/sqoop/retail_db/categories --fields-terminated-by ',' --lines-terminated-by '\n' --append
+
+--specific columns
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root -P --table customers --columns 'customer_id,customer_fname,customer_lname' -m 1 --target-dir /user/cloudera/sqoop/retail_db/customers1 --fields-terminated-by '|'
+
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root -P --table customers --columns 'customer_id,customer_fname,customer_lname' -m 3 --target-dir /user/cloudera/sqoop/retail_db/customers2
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root -P --table customers --columns 'customer_id,customer_fname,customer_lname' -m 3 --target-dir /user/cloudera/sqoop/retail_db/customers2
+
+sqoop import --connect jdbc:mysql://localhost:3306/demodb --username root -P --table students -m 3 --target-dir /user/cloudera/sqoop/demodb/students --split-by 'id'
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root --password cloudera --query 'select * from customers where customer_id < 100 and $CONDITIONS'  -m 1 --target-dir /user/cloudera/sqoop/retail_db/customer_id 
+
+--as-sequencefile 
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root -P --table customers -m 1 --target-dir /user/cloudera/sqoop/retail_db/customers_seq --as-sequencefile 
+
+--as-sequencefile 
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username root -P --table customers -m 1 --target-dir /user/cloudera/sqoop/retail_db/customers_avro --as-avrodatafile
+
+
+
+===  importing all tables in the database ===
+
+sqoop import-all-tables --connect jdbc:mysql://localhost:3306/demodb --username root --password cloudera -m 1 --warehouse-dir /user/cloudera/sqoop/demodb
+
+
+===== Importing data into Hive =====
+
+sqoop create-hive-table --connect jdbc:mysql://localhost:3306/retail_db --username root --password cloudera --table categories --fields-terminated-by ',' --hive-table testdb.categories
+
+
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --table categories --username root --password cloudera --hive-table testdb.categories -m 1 --fields-terminated-by ',' --lines-terminated-by '\n' --hive-import 
+
+
+====================
+  export
+====================
+====================
+    export
+====================
+
+
+sqoop export --connect jdbc:mysql://localhost:3306/exportdb --table employee --username root --password cloudera -m 1  --export-dir /user/cloudera/sqoop/upsert/emp.txt --input-fields-terminated-by ','
+
+
+
+sqoop export --connect jdbc:mysql://localhost:3306/exportdb --table students --username root --password cloudera -m 1  --export-dir /user/cloudera/sqoop/demodb/students/part-m-* --input-fields-terminated-by ','  
+
+sqoop export --connect jdbc:mysql://localhost:3306/exportdb --table customers --username root --password cloudera -m 1  --export-dir /user/cloudera/sqoop/retail_db/customers/* --input-fields-terminated-by '\t'  
+
+sqoop export --connect jdbc:mysql://localhost:3306/exportdb --table students --username root --password cloudera -m 1  --export-dir /user/cloudera/sqoop/demodb/students/part-m-* --input-fields-terminated-by ',' --columns 'id,name,mobile,email'
+
+sqoop export --connect jdbc:mysql://localhost:3306/exportdb --table customers --username root --password cloudera -m 1  --export-dir /user/cloudera/sqoop/retail_db/customers_avro 
+
+sqoop export --connect jdbc:mysql://localhost:3306/exportdb --table customers --username root --password cloudera -m 1  --export-dir /user/cloudera/sqoop/retail_db/customers_seq
+
+sqoop export --connect jdbc:mysql://localhost:3306/exportdb --table employee --username root --password cloudera -m 1 --export-dir /user/cloudera/sqoop/upsert/emp2.txt --update-key 'empid' --update-mode 'allowinsert'
+
+NOTE: --update-mode has two possible values: 'updateonly', 'allowinsert'
+
+
+================
+  eval
+================
+
+sqoop eval --connect jdbc:mysql://localhost:3306/demodb --username root --password cloudera --query 'show tables'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/demodb --username root -P --query 'select * from students'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/demodb --username root --password cloudera --query 'create table tab1(c1 int, c2 varchar(50))'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/demodb --username root --password cloudera --query 'insert into tab1 (c1, c2) values (1, "raju"), (2, "ramesh")'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/demodb --username root --password cloudera --query 'update tab1 set c2 = "kanakaraju" where c1=1'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/demodb --username root --password cloudera --query 'delete from tab1 where c1=1'
+
+sqoop eval --connect jdbc:mysql://localhost:3306/demodb --username root --password cloudera --query 'drop table tab1'
+
+================
+  codegen
+================
+
+sqoop codegen --connect jdbc:mysql://localhost:3306/demodb --table emp --username root --password cloudera --class-name EmpTable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	 
