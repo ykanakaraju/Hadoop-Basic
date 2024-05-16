@@ -1,0 +1,292 @@
+
+ Curriculum (40 sessions - 80 hours)
+ -------------------------------------
+  Introduction to Big Data & Hadoop
+  HDFS
+  YARN
+  MapReduce (using Java)
+  Hive 
+  Impala - Basics
+  Sqoop  
+  HBase - Basic Operations
+  Kafka (using Java)      
+  Spark (PySpark)  
+
+
+ Training Materials
+ ------------------
+    -> PDF Presentations
+    -> Code modules, command documents, programs
+    -> Class Notes
+    -> Databricks Notebooks
+    -> GitHub: https://github.com/ykanakaraju/Hadoop-Basic
+
+
+ Pre-requisites
+ --------------
+	-> SQL
+	-> Java
+	-> Python
+
+ ------------------------------------------------------------------ 
+  
+    Big Data
+   --------
+    
+   - Type of data which large and complex that your traditional data processing systems
+     can not reasonably store and process. 
+
+   Big Data scenarios
+   ------------------
+       -> The volume to be handled is very high (much higher than 1 TB)
+       -> You want to support real-time analytics (velocity)
+       -> You data is growing very fast, so that in no time your system becomes inadeqaute. 
+       -> Process unstructures, semi-structured data etc.
+    
+  Big Data Characteristics
+  ------------------------
+       -> Volume
+       -> Velocity
+       -> Variety 
+       -> Veracity (correctness of the data)
+       -> Value (extracting insights from the data)       
+
+  Why your traditional systems have big data problem
+  --------------------------------------------------
+   -> Because your traditional systems ( that exists in pre-internet era ) are not designed
+      for internet scale applications.
+ 
+   -> They are designed to run on a single machine. The single machine has only limited 
+      amount of resources.
+
+
+  Scalability Options
+  -------------------
+    -> Scale up  (Vertical Scaling)   -> Migrate to a machine with higher configuration
+    -> Scala out (Horizontal Scaling) -> Use many machines instead of one. 
+                                      -> Use computing cluster
+
+   What is a Computing Cluster?
+   ----------------------------
+   A unified network of nodes (machines) whose cumulative resources can be used to store
+   or process data as if you working with a single machine. 
+
+   
+   What is a Framework ?
+   ---------------------
+    A framework is a set of libraries that implement all the basic low-level functionalities
+    that the framework is intended for. The users of the framework should focus on the 
+    business-logic and implement their solutions as per the guidelines provided by the 
+    framework. 
+
+
+    What is the solution to storage & processing problems associated with Big Data
+    ------------------------------------------------------------------------------
+    -> Hadoop provides a solution for big-data problems.
+
+ 
+    What is Hadoop ?
+    ----------------     
+    Hadoop is a Open Source Framework to Store and Process data in a distributed way 
+    using a cluster of commdity harware. 
+
+     -> Provides two things:
+	   -> Distributed Storage Solution (HDFS)
+	   -> Distributed Processing Solution (MapReduce)
+        And also,
+           -> Resource Management (YARN)
+
+
+    Hadoop Distributions
+    --------------------
+	Apache Hadoop => Open source	
+	On-Prem & Hybrid Cloud => Cloudera & MapR
+	Managed Cloud Solutions 
+		-> AWS   : AWS Elastic MapReduce (EMR)
+		-> Azure : HDInsights
+	        -> GCP   : DataProc 
+
+
+    HDFS (Hadoop Distributed File System)
+    --------------------------------------
+
+      -> Stores data in the form of "blocks" of 128 MB each
+      -> Each block is replicated on other nodes so many times as defined by a 'replication-factor'
+           (default rep-factor is 3)      
+      
+     Q1:  If I want to stote 1024 MB (1 GB) file on HDFS, how much physical storage space 
+          is required (using default configs) => 3 GB   
+
+     Q2:  If you want to store 1034 MB file, how many unique blocks are created on HDFS?
+	  -> 8 blocks of 128MB each & 1 block of 10 MB
+         
+     
+    MapReduce (Distributed Processing Solution)
+    --------------------------------------------
+   
+     -> MR is a distributed processing solution where a "map" task is launched on small chuck
+        of data (like a block) on HDFS. 
+     -> All these "map" tasks produce intermediate files (results of map tasks).
+     -> All these intermediate files are shuffled (collected from multiple machines) and sorted.        
+     -> This shuffled data is sent to "reducer" program/task
+     -> "reducer" task will aggregate the results and write them as final output on HDFS. 
+
+
+   Hadoop EcoSystem
+   ----------------   
+     -> Refers to a set of tools/frameworks/software that run on top of hadoop to solve
+        various big data related problems.          
+
+     -> Popular Components in Hadoop EcoSystem             
+
+          -> Resource Management Tool: YARN
+          -> Coordination Management Tool: ZooKeeper
+          -> Execution Frameworks: MapReduce, Spark, Tez
+          -> SQL-Analytics: Hive, Impala, Drill
+	  -> Streaming Data Processing: Kafka, Storm, Spark Streaming
+	  -> Machine Learning: Mahout, Spark MLLib
+          -> Scripting: Pig
+          -> NoSQL database: HBase
+          -> Data ingestion tools: Flume, Sqoop
+
+
+  =======================================================================
+     HDFS (Hadoop Distributed File System)
+  =======================================================================
+
+   -> Storage Solution
+   -> Stores data as blocks of 128 MB 
+   -> Each block is replicated.
+
+   HDFS Architecture
+   -----------------
+
+   Hadoop uses Master-Slave Architecture
+
+
+   HDFS Daemons 
+   ------------
+     -> Daemon: Continuosly running background job. 
+
+     1. Name Node (NN)	
+	-> runs on the master machine (master daemon)
+        -> recieves heart-beats from DNs.
+	   -> if three successive heart-beats are missing from any DN, it is considered as 'dead'
+        -> NN maintains two "meta-data" files
+	    
+           1. FSImage
+		-> Persistent disk file
+                -> Will contain all the meta-data info from the time that the NN service is started
+                   upto the last checkpoint.
+
+	   2. EditLog
+		-> Maintained in memory (RAM)
+		-> All incrmental changes are recorded in this file.        
+
+     2. Data Node (DN)
+	-> runs on every slave machine (salve daemon)
+  	-> every DB sends heart-beats to NN once in every 3 seconds
+ 
+        -> In every heart-beat, DN sends "block-report" of that node
+           -> A 'block-report' consists of such info as storage data, which files, which blocks, 
+              rep-factors, permissions, ...        
+    
+     3. Secondary Name Node (SNN)
+          -> responsible for check-pointing process
+              -> check-pointing is a process of merging the edit-log file with fsimage file.
+
+     4. Balancer 
+	  -> Ensures that the replication-factor of the files is maintained. 
+
+          -> A file can become "under-replicated" if one nodes that contain the blocks of the
+             goes down, or if the rep-factor of the file is increased. Then balencer creates
+             additional replicas of the blocks of that file.  
+
+	  -> A file can become "over-replicated" if one nodes that contain the blocks that was 
+             previously down and  comes up again, or if the rep-factor of the file is decreased.
+             Then balencer removes the replicas of the blocks of that file beyond the rep-factor.   
+
+
+   HDFS High Availability
+   ----------------------
+     
+      => Availability : Means that the system do not have any down-time. Always available to the client.
+        
+      => Hadoop High Availability is introduced in Hadoop 2.0 onwards. 
+	   -> We have "Active NN" and "Stand-by Name Node"
+
+      => Hadoop 1.x is not high availble system.
+	   -> In Hadoop 1.x, Name Node is a 'Single Point of Failure'   
+
+
+
+      HDFS File Operations
+      ---------------------
+
+       => HDFS is non-editable file system.
+
+       Default Paths:
+
+        * Cloudera Local Home :  /home/cloudera
+        * HDFS Home: 		 /user/cloudera
+        
+        HDFS FS Command Syntax:  $hadoop fs -<command-name> <parameters>
+                                 $hdfs dfs -<command-name> <parameters>
+
+         
+     
+       Common File Ops
+       ---------------
+
+ * hadoop fs -help   				=> lists all the commands with a brief discription
+ * hadoop fs -help <command-name>  
+ * hadoop fs -chmod -R 755 <file/dir>		=> change permission for a file/directory
+ * hadoop fs -cat <file-name>
+ * hadoop fs -ls
+ * hadoop fs -ls <dir-path>
+ * hadoop fs -ls -R  <dir-path>
+
+ * hadoop fs -cp <source file> <target dir>     => Copies within HDFS frpm source to target
+ * hadoop fs -mv <source file> <target dir>     => Moves within HDFS frpm source to target
+ * hadoop fs -rm -r <file-name/directory-name>
+	 
+ // copy from Linux to HDFS
+ * hadoop -copyFromLocal <local file path>  <hdfs file path> 
+ * hadoop -put <local file path>  <hdfs file path> 
+
+ // copy from HDFS to Linux
+ * hadoop -copyToLocal <hdfs file path> <local file path>   
+ * hadoop -get <hdfs file path> <local file path>   
+
+ * hadoop -moveFromLocal <local file path>  <hdfs file path> 
+ * hadoop -moveToLocal <hdfs file path> <local file path> 
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	 
